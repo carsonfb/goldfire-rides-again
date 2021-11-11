@@ -5,6 +5,8 @@ import numpy
 #import line_profiler
 import sys
 from datetime import datetime
+import glob
+import random
 
 # https://www.youtube.com/watch?v=a4NVQC_2S2U
 
@@ -18,19 +20,80 @@ class Fire:
     def __init__(self):
         self.window_w = 640
         self.window_h = 480
+        self.size = self.window_w * self.window_h
 
         self.frames = 0
 
-    def read_palettes():
-        pass
+        self.read_palettes()
 
-    def make_palette():
+        self.palette_index = 0
+        self.num_palettes = len(self.palettes)
+
+        self.front_buf = [0x00] * self.size
+        self.back_buf = [0x00] * self.size
+        self.display_buf = [0x00] * (self.size << 2)
+
+    def read_palettes(self):
+        self.palettes = []
+        files = glob.glob("palettes\*.BIN")
+
+        for file in files:
+            self.palettes.append(self.make_palette(file))
+
+    def make_palette(self, file):
+        palette = []
+
+        with open(file, "rb") as fh:
+            for index in range(0, 256):
+                r, g, b = fh.read(3)
+                palette.extend([r, g, b, 0xFF])
+
+        return(palette)
+
+    def generate_data(self):
+        random_bytes = []
+
+        # Generate two rows of values at either the min or max value of the palette.
+        for i in range(0, self.window_w << 1):
+            random_bytes.append(random.randint(0, 1) * 255)
+
+    def make_frame(self):
         pass
 
     #@profile
     def display_frame(self):
+        random_bytes = self.generate_data()
+
         pixels = bytes([0xFF, 0x7F, 0x00, 0xFF, 0x00, 0xFF, 0X7F, 0XFF])
         bitmap = numpy.frombuffer(pixels * 320 * 480, numpy.uint8)
+
+        index = 0
+
+        for row in range(0, self.window_h):
+            for col in range(0, self.window_w):
+                value = 0
+
+                if col == 0:
+                    value += self.back_buf[(row * self.window_h) + self.window_h - 1]
+                    value += self.back_buf[(row * self.window_h) + col + 1]
+                elif col == self.window_h - 1:
+                    value += self.back_buf[(row * self.window_h) + col - 1]
+                    value += self.back_buf[row * self.window_h]
+                else:
+                    value += self.back_buf[(row * self.window_h) + col - 1]
+                    value += self.back_buf[(row * self.window_h) + col + 1]
+
+                """
+                if row == self.window_w - 2:
+                    value += self.back_buf[row - 1]
+                    value += self.back_buf[0]
+                if row == self.window_w - 1:
+                    value += self.back_buf[row - 1]
+                    value += self.back_buf[0]
+                else:
+                    value += self.back_buf[(row * self.window_h) + row - 1]
+                    value += self.back_buf[row + 1]
+                """
 
         # TODO: Mapping a texture to a polygon should be much faster.
 
