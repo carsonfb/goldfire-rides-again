@@ -70,18 +70,20 @@ class Fire:
         index = 0
 
         for row in range(0, self.window_h):
+            row_index = row * self.window_h
+
             for col in range(0, self.window_w):
                 value = 0
 
                 if col == 0:
-                    value += self.back_buf[(row * self.window_h) + self.window_h - 1]
-                    value += self.back_buf[(row * self.window_h) + col + 1]
+                    value += self.back_buf[row_index + self.window_h - 1]
+                    value += self.back_buf[row_index + col + 1]
                 elif col == self.window_h - 1:
-                    value += self.back_buf[(row * self.window_h) + col - 1]
-                    value += self.back_buf[row * self.window_h]
+                    value += self.back_buf[row_index + col - 1]
+                    value += self.back_buf[row_index]
                 else:
-                    value += self.back_buf[(row * self.window_h) + col - 1]
-                    value += self.back_buf[(row * self.window_h) + col + 1]
+                    value += self.back_buf[row_index + col - 1]
+                    value += self.back_buf[row_index + col + 1]
 
 
         # TODO: Mapping a texture to a polygon should be much faster.
