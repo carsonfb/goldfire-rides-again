@@ -83,17 +83,6 @@ class Fire:
                     value += self.back_buf[(row * self.window_h) + col - 1]
                     value += self.back_buf[(row * self.window_h) + col + 1]
 
-                """
-                if row == self.window_w - 2:
-                    value += self.back_buf[row - 1]
-                    value += self.back_buf[0]
-                if row == self.window_w - 1:
-                    value += self.back_buf[row - 1]
-                    value += self.back_buf[0]
-                else:
-                    value += self.back_buf[(row * self.window_h) + row - 1]
-                    value += self.back_buf[row + 1]
-                """
 
         # TODO: Mapping a texture to a polygon should be much faster.
 
