@@ -1,20 +1,15 @@
 import OpenGL.GL as gl
 import OpenGL.GLUT as glut
-#from OpenGL.GLU import *
 import numpy as np
-#import line_profiler
-import sys
 from datetime import datetime
 import glob
 import random
 
 # https://www.youtube.com/watch?v=a4NVQC_2S2U
 
-# TODO: Add keyboard support
 # TODO: Remove the window frame
 # TODO: Add a README.md
 # TODO: Add a requirements file
-# TODO: Add profiling
 
 class Fire:
     def __init__(self):
@@ -59,7 +54,6 @@ class Fire:
     def make_frame(self):
         pass
 
-    #@profile
     def display_frame(self):
         random_bytes = self.generate_data()
 
@@ -68,11 +62,13 @@ class Fire:
             row_index = (row + 1) * self.window_w
 
             for col in range(1, self.window_w - 1):
+                col_index = row_index + col
+
                 value = (
-                    self.back_buf[row_index + col - 1]
-                    + self.back_buf[row_index + col + 1]
-                    + self.back_buf[row_index + col]
-                    + self.back_buf[row_index + self.window_w + col]
+                    self.back_buf[col_index - 1]
+                    + self.back_buf[col_index + 1]
+                    + self.back_buf[col_index]
+                    + self.back_buf[col_index + self.window_w]
                 ) >> 2
 
                 self.back_buf[row_index - self.window_w + col] = value
@@ -100,10 +96,12 @@ class Fire:
         row_index = (self.window_h - 1) * self.window_w
 
         for col in range(1, self.window_w - 1):
+            col_index = row_index + col
+
             value = (
-                self.back_buf[row_index + col - 1]
-                + self.back_buf[row_index + col + 1]
-                + self.back_buf[row_index + col]
+                self.back_buf[col_index - 1]
+                + self.back_buf[col_index + 1]
+                + self.back_buf[col_index]
                 + random_bytes[col]
             ) >> 2
 
@@ -184,15 +182,6 @@ class Fire:
 
         self.frames += 1
 
-        if self.frames == 5000:
-            stop_time = datetime.now()
-
-            glut.glutDestroyWindow(self.window)
-
-            print ("Frames: {}".format(self.frames))
-            print ("Seconds: {}".format(((stop_time - self.start_time).total_seconds())))
-            print ("FPS: {}".format(self.frames / (stop_time - self.start_time).total_seconds()))
-
     def kb_input(self, key, x, y):
         if key in [b'q', b'Q', b'\x1B']:
             stop_time = datetime.now()
@@ -210,7 +199,6 @@ class Fire:
         else:
             print ("KEY: {}".format(key))
 
-    #@profile
     def main(self):
         glut.glutInit()
 
