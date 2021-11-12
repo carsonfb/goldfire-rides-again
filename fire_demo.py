@@ -1,7 +1,7 @@
 import OpenGL.GL as gl
 import OpenGL.GLUT as glut
 #from OpenGL.GLU import *
-import numpy
+import numpy as np
 #import line_profiler
 import sys
 from datetime import datetime
@@ -65,26 +65,26 @@ class Fire:
         random_bytes = self.generate_data()
 
         pixels = bytes([0xFF, 0x7F, 0x00, 0xFF, 0x00, 0xFF, 0X7F, 0XFF])
-        bitmap = numpy.frombuffer(pixels * 320 * 480, numpy.uint8)
+        bitmap = np.frombuffer(pixels * 320 * 480, np.uint8)
 
         index = 0
 
-        for row in range(0, self.window_h):
+        for row in range(self.window_h):
             row_index = row * self.window_h
 
-            for col in range(0, self.window_w):
+            for col in range(1, self.window_w - 1):
                 value = 0
 
-                if col == 0:
-                    value += self.back_buf[row_index + self.window_h - 1]
-                    value += self.back_buf[row_index + col + 1]
-                elif col == self.window_h - 1:
-                    value += self.back_buf[row_index + col - 1]
-                    value += self.back_buf[row_index]
-                else:
-                    value += self.back_buf[row_index + col - 1]
-                    value += self.back_buf[row_index + col + 1]
+                value += self.back_buf[row_index + col - 1]
+                value += self.back_buf[row_index + col + 1]
 
+            # For column 0
+            value = self.back_buf[row_index + self.window_h - 1]
+            value += self.back_buf[row_index + col + 1]
+
+            # For last column
+            value = self.back_buf[row_index + col - 1]
+            value += self.back_buf[row_index]
 
         # TODO: Mapping a texture to a polygon should be much faster.
 
