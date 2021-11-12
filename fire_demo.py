@@ -171,10 +171,7 @@ class Fire:
         for value in self.front_buf:
             quad = value << 2
 
-            self.display_buf[index] = self.palettes[self.palette_index][quad]
-            self.display_buf[index + 1] = self.palettes[self.palette_index][quad + 1]
-            self.display_buf[index + 2] = self.palettes[self.palette_index][quad + 2]
-            self.display_buf[index + 3] = self.palettes[self.palette_index][quad + 3]
+            self.display_buf[index:index + 3] = self.palettes[self.palette_index][quad:quad + 3]
 
             index += 4
 
@@ -192,10 +189,11 @@ class Fire:
             value = random.randint(0, 255)
             quad = value << 2
 
-            self.display_buf[index] = self.palettes[self.palette_index][quad]
-            self.display_buf[index + 1] = self.palettes[self.palette_index][quad + 1]
-            self.display_buf[index + 2] = self.palettes[self.palette_index][quad + 2]
-            self.display_buf[index + 3] = self.palettes[self.palette_index][quad + 3]
+            #self.display_buf[index] = self.palettes[self.palette_index][quad]
+            #self.display_buf[index + 1] = self.palettes[self.palette_index][quad + 1]
+            #self.display_buf[index + 2] = self.palettes[self.palette_index][quad + 2]
+            #self.display_buf[index + 3] = self.palettes[self.palette_index][quad + 3]
+            self.display_buf[index:index + 3] = self.palettes[self.palette_index][quad:quad + 3]
 
             index += 4
 
