@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 import glob
 import random
@@ -9,7 +10,6 @@ import numpy as np
 
 # TODO: Remove the window frame
 # TODO: Add a README.md
-# TODO: Add a requirements file
 
 class Fire:
     def __init__(self):
@@ -50,6 +50,10 @@ class Fire:
         files = glob.glob(r"palettes\*.bin")
 
         for file in files:
+            if os.path.getsize(file) != 768:
+                # Skip the palette file if it is the wrong size.
+                continue
+
             if "default.bin" in file:
                 # Set the default palette to the first palette entry.
                 palettes[0] = self.make_palette(file)
@@ -64,8 +68,6 @@ class Fire:
 
         # Initialize the palette structure.
         palette = []
-
-        # TODO: reject the palette if there are not exactly 768 values.
 
         with open(file, "rb") as fh:
             # Read in all of the color entries.
@@ -102,6 +104,9 @@ class Fire:
 
             For the bottom two rows, pull pixels from the randomly generated data.
 
+            Since no pixel is changed until all calculations that use it have completed,
+            we do not need another buffer.
+
             This is a slight departure from the method used in the original GoldFire.
         """
 
@@ -110,9 +115,17 @@ class Fire:
 
         # TODO: This doesn't have to start at 0.
         for row in range(self.window_h - 2):
+            # The last two rows are calculated separately since they
+            # have special processing due to the random data.
+
+            # The next row is pre-calculated to save processing.
             row_index = (row + 1) * self.window_w
 
             for col in range(1, self.window_w - 1):
+                # Process all columns except for the first and last column.
+
+                # The pixel directly below the current one is pre-calculated
+                # to save processing.
                 col_index = row_index + col
 
                 value = (
@@ -124,7 +137,7 @@ class Fire:
 
                 self.back_buf[row_index - self.window_w + col] = value
 
-            # For column 0
+            # Process the first column.
             value = (
                 self.back_buf[row_index- 1]
                 + self.back_buf[row_index + 1]
@@ -144,9 +157,12 @@ class Fire:
 
             self.back_buf[row_index - 1] = value
 
+        # The next row is pre-calculated to save processing.
         row_index = (self.window_h - 1) * self.window_w
 
         for col in range(1, self.window_w - 1):
+            # The pixel directly below the current one is pre-calculated
+            # to save processing.
             col_index = row_index + col
 
             value = (
@@ -178,6 +194,7 @@ class Fire:
 
         self.back_buf[row_index - 1] = value
 
+        # The next row is pre-calculated to save processing.
         row_index = (self.window_h - 1) * self.window_w
 
         for col in range(1, self.window_w - 1):
