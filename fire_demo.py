@@ -63,100 +63,101 @@ class Fire:
     def display_frame(self):
         random_bytes = self.generate_data()
 
+        # TODO: This doesn't have to start at 0.
         for row in range(self.window_h - 2):
             row_index = row * self.window_w
 
             for col in range(1, self.window_w - 1):
-                value = self.back_buf[row_index + col - 1]
-                value += self.back_buf[row_index + col + 1]
-                value += self.back_buf[row_index + self.window_w + col]
-                value += self.back_buf[row_index + (self.window_w << 1) + col]
-
-                value >>= 2
+                value = (
+                    self.back_buf[row_index + col - 1]
+                    + self.back_buf[row_index + col + 1]
+                    + self.back_buf[row_index + self.window_w + col]
+                    + self.back_buf[row_index + (self.window_w << 1) + col]
+                ) >> 2
 
                 self.front_buf[row_index + col] = value
 
             # For column 0
-            value = self.back_buf[row_index + self.window_w - 1]
-            value += self.back_buf[row_index + 1]
-            value += self.back_buf[row_index + self.window_w]
-            value += self.back_buf[row_index + (self.window_w << 1)]
-
-            value >>= 2
+            value = (
+                self.back_buf[row_index + self.window_w - 1]
+                + self.back_buf[row_index + 1]
+                + self.back_buf[row_index + self.window_w]
+                + self.back_buf[row_index + (self.window_w << 1)]
+            ) >> 2
 
             self.front_buf[row_index] = value
 
             # For last column
-            value = self.back_buf[row_index + self.window_w - 2]
-            value += self.back_buf[row_index]
-            value += self.back_buf[row_index + self.window_w + self.window_w - 1]
-            value += self.back_buf[row_index + (self.window_w << 1) + self.window_w - 1]
-
-            value >>= 2
+            value = (
+                self.back_buf[row_index + self.window_w - 2]
+                + self.back_buf[row_index]
+                + self.back_buf[row_index + self.window_w + self.window_w - 1]
+                + self.back_buf[row_index + (self.window_w << 1) + self.window_w - 1]
+            ) >> 2
 
             self.front_buf[row_index + self.window_w - 1] = value
 
         row_index = (self.window_h - 2) * self.window_w
 
         for col in range(1, self.window_w - 1):
-            value = self.back_buf[row_index + col - 1]
-            value += self.back_buf[row_index + col + 1]
-            value += self.back_buf[row_index + self.window_w + col]
-            value += random_bytes[col]
-
-            value >>= 2
+            value = (
+                self.back_buf[row_index + col - 1]
+                + self.back_buf[row_index + col + 1]
+                + self.back_buf[row_index + self.window_w + col]
+                + random_bytes[col]
+            ) >> 2
 
             self.front_buf[row_index + col] = value
 
         # For column 0
-        value = self.back_buf[row_index + self.window_w - 1]
-        value += self.back_buf[row_index + 1]
-        value += self.back_buf[row_index + self.window_w]
-        value += random_bytes[0]
-
-        value >>= 2
+        value = (
+            self.back_buf[row_index + self.window_w - 1]
+            + self.back_buf[row_index + 1]
+            + self.back_buf[row_index + self.window_w]
+            + random_bytes[0]
+        ) >> 2
 
         self.front_buf[row_index] = value
 
         # For last column
-        value = self.back_buf[row_index + self.window_w - 2]
-        value += self.back_buf[row_index]
-        value += self.back_buf[row_index + self.window_w + self.window_w - 1]
-        value += random_bytes[self.window_w - 1]
-
-        value >>= 2
+        value = (
+            self.back_buf[row_index + self.window_w - 2]
+            + self.back_buf[row_index]
+            + self.back_buf[row_index + self.window_w + self.window_w - 1]
+            + random_bytes[self.window_w - 1]
+        ) >> 2
 
         self.front_buf[row_index + self.window_w - 1] = value
 
         row_index = (self.window_h - 1) * self.window_w
 
         for col in range(1, self.window_w - 1):
-            value = self.back_buf[row_index + col - 1]
-            value += self.back_buf[row_index + col + 1]
-            value += random_bytes[col]
-            value += random_bytes[self.window_w + col]
-
-            value >>= 2
+            value = (
+                self.back_buf[row_index + col - 1]
+                + self.back_buf[row_index + col + 1]
+                + random_bytes[col]
+                + random_bytes[self.window_w + col]
+            ) >> 2
 
             self.front_buf[row_index + col] = value
 
         # For column 0
-        value = self.back_buf[row_index + self.window_w - 1]
-        value += self.back_buf[row_index + 1]
-        value += random_bytes[0]
-        value += random_bytes[self.window_w]
-
-        value >>= 2
+        value = (
+            self.back_buf[row_index + self.window_w - 1]
+            + self.back_buf[row_index + 1]
+            + random_bytes[0]
+            + random_bytes[self.window_w]
+        ) >> 2
 
         self.front_buf[row_index] = value
 
         # For last column
-        value = self.back_buf[row_index + self.window_w - 2]
-        value += self.back_buf[row_index]
-        value += random_bytes[self.window_w - 1]
-        value += random_bytes[(self.window_w << 1) - 1]
-
-        value >>= 2
+        value = (
+            self.back_buf[row_index + self.window_w - 2]
+            + self.back_buf[row_index]
+            + random_bytes[self.window_w - 1]
+            + random_bytes[(self.window_w << 1) - 1]
+        ) >> 2
 
         self.front_buf[row_index + self.window_w - 1] = value
 
