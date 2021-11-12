@@ -26,7 +26,8 @@ class Fire:
 
         self.read_palettes()
 
-        self.palette_index = 0
+        # TODO: Make the default palette the first index.
+        self.palette_index = 1
         self.num_palettes = len(self.palettes)
 
         self.front_buf = [0x00] * self.size
@@ -51,11 +52,8 @@ class Fire:
         return(palette)
 
     def generate_data(self):
-        random_bytes = []
-
         # Generate two rows of values at either the min or max value of the palette.
-        for i in range(0, self.window_w << 1):
-            random_bytes.append(random.randint(0, 1) * 255)
+        return random.choices([0, 255], k=self.window_w << 1)
 
     def make_frame(self):
         pass
@@ -64,12 +62,8 @@ class Fire:
     def display_frame(self):
         random_bytes = self.generate_data()
 
-        pixels = bytes([0xFF, 0x7F, 0x00, 0xFF, 0x00, 0xFF, 0X7F, 0XFF])
-        bitmap = np.frombuffer(pixels * 320 * 480, np.uint8)
-
-        index = 0
-
-        for row in range(self.window_h):
+        """
+        for row in range(self.window_h - 2):
             row_index = row * self.window_h
 
             for col in range(1, self.window_w - 1):
@@ -77,14 +71,136 @@ class Fire:
 
                 value += self.back_buf[row_index + col - 1]
                 value += self.back_buf[row_index + col + 1]
+                value += self.back_buf[row_index + self.window_w + col]
+                value += self.back_buf[row_index + (self.window_w << 1) + col]
+
+                value >>= 2
+
+                self.front_buf[row_index + col] = value
 
             # For column 0
-            value = self.back_buf[row_index + self.window_h - 1]
-            value += self.back_buf[row_index + col + 1]
+            value = self.back_buf[row_index + self.window_w - 1]
+            value += self.back_buf[row_index + 1]
+            value += self.back_buf[row_index + self.window_w]
+            value += self.back_buf[row_index + (self.window_w << 1)]
+
+            value >>= 2
+
+            self.front_buf[row_index] = value
 
             # For last column
-            value = self.back_buf[row_index + col - 1]
+            value = self.back_buf[row_index + self.window_w - 2]
             value += self.back_buf[row_index]
+            value += self.back_buf[row_index + self.window_w + self.window_w - 1]
+            value += self.back_buf[row_index + (self.window_w << 1) + self.window_w - 1]
+
+            value >>= 2
+
+            self.front_buf[row_index + self.window_w - 1] = value
+
+        row_index = self.window_w * (self.window_h - 2)
+
+        for col in range(1, self.window_w - 1):
+            value = 0
+
+            value += self.back_buf[row_index + col - 1]
+            value += self.back_buf[row_index + col + 1]
+            value += self.back_buf[row_index + self.window_w + col]
+            value += random_bytes[col]
+
+            value >>= 2
+
+            self.front_buf[row_index + col] = value
+
+        # For column 0
+        value = self.back_buf[row_index + self.window_w - 1]
+        value += self.back_buf[row_index + 1]
+        value += self.back_buf[row_index + self.window_w]
+        value += random_bytes[0]
+
+        value >>= 2
+
+        self.front_buf[row_index] = value
+
+        # For last column
+        value = self.back_buf[row_index + self.window_w - 2]
+        value += self.back_buf[row_index]
+        value += self.back_buf[row_index + self.window_w + self.window_w - 1]
+        value += random_bytes[self.window_w - 1]
+
+        value >>= 2
+
+        self.front_buf[row_index + self.window_w - 1] = value
+
+        row_index = self.window_w * (self.window_h - 1)
+
+        for col in range(1, self.window_w - 1):
+            value = 0
+
+            value += self.back_buf[row_index + col - 1]
+            value += self.back_buf[row_index + col + 1]
+            value += random_bytes[col]
+            value += random_bytes[self.window_w + col]
+
+            value >>= 2
+
+            self.front_buf[row_index + col] = value
+
+        # For column 0
+        value = self.back_buf[row_index + self.window_w - 1]
+        value += self.back_buf[row_index + 1]
+        value += random_bytes[0]
+        value += random_bytes[self.window_w]
+
+        value >>= 2
+
+        self.front_buf[row_index] = value
+
+        # For last column
+        value = self.back_buf[row_index + self.window_w - 2]
+        value += self.back_buf[row_index]
+        value += random_bytes[self.window_w - 1]
+        value += random_bytes[(self.window_w << 1) - 1]
+
+        value >>= 2
+
+        self.front_buf[row_index + self.window_w - 1] = value
+
+        index = 0
+
+        for value in self.front_buf:
+            quad = value << 2
+
+            self.display_buf[index] = self.palettes[self.palette_index][quad]
+            self.display_buf[index + 1] = self.palettes[self.palette_index][quad + 1]
+            self.display_buf[index + 2] = self.palettes[self.palette_index][quad + 2]
+            self.display_buf[index + 3] = self.palettes[self.palette_index][quad + 3]
+
+            index += 4
+
+        self.front_buf, self.back_buf = self.back_buf, self.front_buf
+
+        #print("BACK_BUF:\n{}\n\n".format(self.back_buf))
+
+        pixels = bytes(self.display_buf)
+        bitmap = np.frombuffer(pixels, np.uint8)
+        """
+
+        index = 0
+
+        for iteration in range(0, self.size):
+            value = random.randint(0, 255)
+            quad = value << 2
+
+            self.display_buf[index] = self.palettes[self.palette_index][quad]
+            self.display_buf[index + 1] = self.palettes[self.palette_index][quad + 1]
+            self.display_buf[index + 2] = self.palettes[self.palette_index][quad + 2]
+            self.display_buf[index + 3] = self.palettes[self.palette_index][quad + 3]
+
+            index += 4
+
+        pixels = bytes(self.display_buf)
+        bitmap = np.frombuffer(pixels, np.uint8)
 
         # TODO: Mapping a texture to a polygon should be much faster.
 
