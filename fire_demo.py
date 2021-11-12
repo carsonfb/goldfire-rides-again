@@ -47,13 +47,14 @@ class Fire:
         with open(file, "rb") as fh:
             for index in range(0, 256):
                 r, g, b = fh.read(3)
+
                 palette.extend([r, g, b, 0xFF])
 
         return(palette)
 
     def generate_data(self):
         # Generate two rows of values at either the min or max value of the palette.
-        return random.choices([0, 255], k=self.window_w << 1)
+        return random.choices([0, 255], weights=[4, 1], k=self.window_w << 1)
 
     def make_frame(self):
         pass
@@ -66,9 +67,7 @@ class Fire:
             row_index = row * self.window_w
 
             for col in range(1, self.window_w - 1):
-                value = 0
-
-                value += self.back_buf[row_index + col - 1]
+                value = self.back_buf[row_index + col - 1]
                 value += self.back_buf[row_index + col + 1]
                 value += self.back_buf[row_index + self.window_w + col]
                 value += self.back_buf[row_index + (self.window_w << 1) + col]
@@ -100,9 +99,7 @@ class Fire:
         row_index = (self.window_h - 2) * self.window_w
 
         for col in range(1, self.window_w - 1):
-            value = 0
-
-            value += self.back_buf[row_index + col - 1]
+            value = self.back_buf[row_index + col - 1]
             value += self.back_buf[row_index + col + 1]
             value += self.back_buf[row_index + self.window_w + col]
             value += random_bytes[col]
@@ -134,9 +131,7 @@ class Fire:
         row_index = (self.window_h - 1) * self.window_w
 
         for col in range(1, self.window_w - 1):
-            value = 0
-
-            value += self.back_buf[row_index + col - 1]
+            value = self.back_buf[row_index + col - 1]
             value += self.back_buf[row_index + col + 1]
             value += random_bytes[col]
             value += random_bytes[self.window_w + col]
