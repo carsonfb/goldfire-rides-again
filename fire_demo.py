@@ -18,8 +18,8 @@ import random
 
 class Fire:
     def __init__(self):
-        self.window_w = 640
-        self.window_h = 480
+        self.window_w = 320
+        self.window_h = 200
         self.size = self.window_w * self.window_h
 
         self.frames = 0
@@ -30,7 +30,6 @@ class Fire:
         self.palette_index = 1
         self.num_palettes = len(self.palettes)
 
-        self.front_buf = [0x00] * self.size
         self.back_buf = [0x00] * self.size
         self.display_buf = [0x00] * (self.size << 2)
 
@@ -54,7 +53,8 @@ class Fire:
 
     def generate_data(self):
         # Generate two rows of values at either the min or max value of the palette.
-        return random.choices([0, 255], weights=[4, 1], k=self.window_w << 1)
+
+        return random.choices([0, 255], weights=[2, 1], k=self.window_w << 1)
 
     def make_frame(self):
         pass
@@ -65,69 +65,37 @@ class Fire:
 
         # TODO: This doesn't have to start at 0.
         for row in range(self.window_h - 2):
-            row_index = row * self.window_w
+            row_index = (row + 1) * self.window_w
 
             for col in range(1, self.window_w - 1):
                 value = (
                     self.back_buf[row_index + col - 1]
                     + self.back_buf[row_index + col + 1]
+                    + self.back_buf[row_index + col]
                     + self.back_buf[row_index + self.window_w + col]
-                    + self.back_buf[row_index + (self.window_w << 1) + col]
                 ) >> 2
 
-                self.front_buf[row_index + col] = value
+                self.back_buf[row_index - self.window_w + col] = value
 
             # For column 0
             value = (
-                self.back_buf[row_index + self.window_w - 1]
+                self.back_buf[row_index- 1]
                 + self.back_buf[row_index + 1]
+                + self.back_buf[row_index]
                 + self.back_buf[row_index + self.window_w]
-                + self.back_buf[row_index + (self.window_w << 1)]
             ) >> 2
 
-            self.front_buf[row_index] = value
+            self.back_buf[row_index - self.window_w] = value
 
             # For last column
             value = (
                 self.back_buf[row_index + self.window_w - 2]
                 + self.back_buf[row_index]
+                + self.back_buf[row_index + self.window_w - 1]
                 + self.back_buf[row_index + self.window_w + self.window_w - 1]
-                + self.back_buf[row_index + (self.window_w << 1) + self.window_w - 1]
             ) >> 2
 
-            self.front_buf[row_index + self.window_w - 1] = value
-
-        row_index = (self.window_h - 2) * self.window_w
-
-        for col in range(1, self.window_w - 1):
-            value = (
-                self.back_buf[row_index + col - 1]
-                + self.back_buf[row_index + col + 1]
-                + self.back_buf[row_index + self.window_w + col]
-                + random_bytes[col]
-            ) >> 2
-
-            self.front_buf[row_index + col] = value
-
-        # For column 0
-        value = (
-            self.back_buf[row_index + self.window_w - 1]
-            + self.back_buf[row_index + 1]
-            + self.back_buf[row_index + self.window_w]
-            + random_bytes[0]
-        ) >> 2
-
-        self.front_buf[row_index] = value
-
-        # For last column
-        value = (
-            self.back_buf[row_index + self.window_w - 2]
-            + self.back_buf[row_index]
-            + self.back_buf[row_index + self.window_w + self.window_w - 1]
-            + random_bytes[self.window_w - 1]
-        ) >> 2
-
-        self.front_buf[row_index + self.window_w - 1] = value
+            self.back_buf[row_index - 1] = value
 
         row_index = (self.window_h - 1) * self.window_w
 
@@ -135,68 +103,83 @@ class Fire:
             value = (
                 self.back_buf[row_index + col - 1]
                 + self.back_buf[row_index + col + 1]
+                + self.back_buf[row_index + col]
                 + random_bytes[col]
-                + random_bytes[self.window_w + col]
             ) >> 2
 
-            self.front_buf[row_index + col] = value
+            self.back_buf[row_index - self.window_w + col] = value
 
         # For column 0
         value = (
             self.back_buf[row_index + self.window_w - 1]
             + self.back_buf[row_index + 1]
+            + self.back_buf[row_index]
             + random_bytes[0]
-            + random_bytes[self.window_w]
         ) >> 2
 
-        self.front_buf[row_index] = value
+        self.back_buf[row_index - self.window_w] = value
 
         # For last column
         value = (
             self.back_buf[row_index + self.window_w - 2]
             + self.back_buf[row_index]
+            + self.back_buf[row_index + self.window_w - 1]
+            + random_bytes[self.window_w - 1]
+        ) >> 2
+
+        self.back_buf[row_index - 1] = value
+
+        row_index = (self.window_h - 1) * self.window_w
+
+        for col in range(1, self.window_w - 1):
+            value = (
+                + random_bytes[col - 1]
+                + random_bytes[col + 1]
+                + random_bytes[col]
+                + random_bytes[self.window_w + col]
+            ) >> 2
+
+            self.back_buf[row_index - self.window_w + col] = value
+
+        # For column 0
+        value = (
+            random_bytes[self.window_w - 1]
+            + random_bytes[self.window_w + 1]
+            + random_bytes[0]
+            + random_bytes[self.window_w]
+        ) >> 2
+
+        self.back_buf[row_index - self.window_w] = value
+
+        # For last column
+        value = (
+            random_bytes[self.window_w - 2]
+            + random_bytes[self.window_w]
             + random_bytes[self.window_w - 1]
             + random_bytes[(self.window_w << 1) - 1]
         ) >> 2
 
-        self.front_buf[row_index + self.window_w - 1] = value
+        self.back_buf[row_index - 1] = value
 
         index = 0
 
-        for value in self.front_buf:
+        for value in self.back_buf:
             quad = value << 2
 
             self.display_buf[index:index + 3] = self.palettes[self.palette_index][quad:quad + 3]
 
             index += 4
-
-        self.front_buf, self.back_buf = self.back_buf, self.front_buf
 
         #print("BACK_BUF:\n{}\n\n".format(self.back_buf))
 
         pixels = bytes(self.display_buf)
         bitmap = np.frombuffer(pixels, np.uint8)
 
-        """
-        index = 0
-
-        for iteration in range(0, self.size):
-            value = random.randint(0, 255)
-            quad = value << 2
-
-            self.display_buf[index:index + 3] = self.palettes[self.palette_index][quad:quad + 3]
-
-            index += 4
-
-        pixels = bytes(self.display_buf)
-        bitmap = np.frombuffer(pixels, np.uint8)
-        """
-
         # TODO: Mapping a texture to a polygon should be much faster.
 
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glLoadIdentity()
-        gl.glDrawPixels(self.window_w, self.window_h, gl.GL_RGBA, gl.GL_FLOAT, bitmap)
+        gl.glDrawPixels(self.window_w, self.window_h, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, bitmap)
         glut.glutSwapBuffers()
 
         self.frames += 1
@@ -219,6 +202,11 @@ class Fire:
             print ("Frames: {}".format(self.frames))
             print ("Seconds: {}".format(((stop_time - self.start_time).total_seconds())))
             print ("FPS: {}".format(self.frames / (stop_time - self.start_time).total_seconds()))
+        elif key in [b'p', b'P']:
+            if self.palette_index == self.num_palettes - 1:
+                self.palette_index = 0
+            else:
+                self.palette_index += 1
         else:
             print ("KEY: {}".format(key))
 
