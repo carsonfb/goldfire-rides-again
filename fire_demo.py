@@ -47,7 +47,7 @@ class Fire:
         palettes.append([])
 
         # Find all of the palette files in the palettes folder.
-        files = glob.glob("palettes\*.bin")
+        files = glob.glob(r"palettes\*.bin")
 
         for file in files:
             if "default.bin" in file:
@@ -79,14 +79,14 @@ class Fire:
         return palette
 
     def generate_data(self):
-        # Generate two rows of values at either the min or max value of the palette.
+        """
+            This method generates two rows of values at either the min or max value
+            of the palette. These are used in the averaging algorithm.
+        """
 
         return random.choices([0, 255], weights=[2, 1], k=self.window_w << 1)
 
     def make_frame(self):
-        pass
-
-    def display_frame(self):
         random_bytes = self.generate_data()
 
         # TODO: This doesn't have to start at 0.
@@ -200,21 +200,29 @@ class Fire:
 
             index += 4
 
-        #print("BACK_BUF:\n{}\n\n".format(self.back_buf))
-
         pixels = bytes(self.display_buf)
-        bitmap = np.frombuffer(pixels, np.uint8)
+
+        return np.frombuffer(pixels, np.uint8)
+
+    def display_frame(self):
+        """
+            This method is the callback for the OpenGL window and displays
+            an updated frame of the fire.
+        """
+
+        bitmap = self.make_frame()
 
         # TODO: Mapping a texture to a polygon should be much faster.
 
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        # Display the new frame.
         gl.glLoadIdentity()
         gl.glDrawPixels(self.window_w, self.window_h, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, bitmap)
         glut.glutSwapBuffers()
 
+        # Increment the number of frames for the purpose of calculating the FPS.
         self.frames += 1
 
-    def kb_input(self, key, x, y):
+    def kb_input(self, key, x_pos, y_pos):
         if key in [b'q', b'Q', b'\x1B']:
             stop_time = datetime.now()
             elapsed_time = (stop_time - self.start_time).total_seconds()
@@ -230,23 +238,36 @@ class Fire:
                 self.palette_index = 0
             else:
                 self.palette_index += 1
-        else:
-            print (f"KEY: {key}")
 
     def main(self):
+        """
+            This method is the main entry point for the class and sets up
+            the OpenGL display and keyboard as well as initializes the
+            start time for the FPS calculation.
+        """
+
+        # Initialize OpenGL
         glut.glutInit()
 
+        # Get the width and height of the monitor and the center for the window.
         screen_w = glut.glutGet(glut.GLUT_SCREEN_WIDTH)
         screen_h = glut.glutGet(glut.GLUT_SCREEN_HEIGHT)
+        center_x = int((screen_w - self.window_w) >> 1)
+        center_y = int((screen_h - self.window_h) >> 1)
 
+        # Create the OpenGL window and display it.
         glut.glutInitDisplayMode(glut.GLUT_RGBA)
         glut.glutInitWindowSize(self.window_w, self.window_h)
-        glut.glutInitWindowPosition(int((screen_w - self.window_w) / 2), int((screen_h - self.window_h) / 2))
+        glut.glutInitWindowPosition(center_x, center_y)
         self.window = glut.glutCreateWindow("GoldFire Rides Again")
+
+        # Setup the callbacks for OpenGL as well as initialize the start time.
         glut.glutDisplayFunc(self.display_frame)
         glut.glutIdleFunc(self.display_frame)
         glut.glutKeyboardFunc(self.kb_input)
         self.start_time = datetime.now()
+
+        # Start the main program loop.
         glut.glutMainLoop()
 
 if __name__ == "__main__":
