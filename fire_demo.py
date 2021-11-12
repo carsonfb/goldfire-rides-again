@@ -56,27 +56,28 @@ class Fire:
 
             if "default.bin" in file:
                 # Set the default palette to the first palette entry.
-                palettes[0] = self.make_palette(file)
+                palettes[0] = Fire.make_palette(file)
             else:
                 # Appened palettes other than the default to the list.
-                palettes.append(self.make_palette(file))
+                palettes.append(Fire.make_palette(file))
 
         return palettes
 
-    def make_palette(self, file):
+    @classmethod
+    def make_palette(cls, file):
         """ This method loads a palette file and appends the alpha value. """
 
         # Initialize the palette structure.
         palette = []
 
-        with open(file, "rb") as fh:
+        with open(file, "rb") as palette_fh:
             # Read in all of the color entries.
             for index in range(0, 256):
                 # Read the red, green, and blue values for the color.
-                r, g, b = fh.read(3)
+                red, green, blue = palette_fh.read(3)
 
                 # Store the red, green, and blue values as well as the alpha value.
-                palette.extend([r, g, b, 0xFF])
+                palette.extend([red, green, blue, 0xFF])
 
         return palette
 
