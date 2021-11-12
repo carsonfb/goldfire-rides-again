@@ -1,9 +1,9 @@
-import OpenGL.GL as gl
-import OpenGL.GLUT as glut
-import numpy as np
 from datetime import datetime
 import glob
 import random
+import OpenGL.GL as gl
+import OpenGL.GLUT as glut
+import numpy as np
 
 # https://www.youtube.com/watch?v=a4NVQC_2S2U
 
@@ -13,38 +13,70 @@ import random
 
 class Fire:
     def __init__(self):
+        # Setup the starting time.  It will be initialized later.
+        self.start_time = None
+
+        # Initialize the window size.
+        self.window = None
         self.window_w = 320
         self.window_h = 200
         self.size = self.window_w * self.window_h
 
+        # Set the starting frames to 0.
         self.frames = 0
 
-        self.read_palettes()
-
-        # TODO: Make the default palette the first index.
-        self.palette_index = 1
+        # Initialize the palettes.
+        self.palette_index = 0
+        self.palettes = self.read_palettes()
         self.num_palettes = len(self.palettes)
 
+        # Initialize the display buffer and back buffer. The back buffer only has
+        # the palette lookup value, so it is only a 1/4 of the size.
         self.back_buf = [0x00] * self.size
         self.display_buf = [0x00] * (self.size << 2)
 
     def read_palettes(self):
-        self.palettes = []
-        files = glob.glob("palettes\*.BIN")
+        """
+            This method reads the palettes from the palettes folder on disk.  Users can supply
+            their own palettes and they will be automatically loaded.  The default palette will
+            be loaded as the first in the list.
+        """
+
+        # Initialize the palette structure and leave a placeholder for the default palette.
+        palettes = []
+        palettes.append([])
+
+        # Find all of the palette files in the palettes folder.
+        files = glob.glob("palettes\*.bin")
 
         for file in files:
-            self.palettes.append(self.make_palette(file))
+            if "default.bin" in file:
+                # Set the default palette to the first palette entry.
+                palettes[0] = self.make_palette(file)
+            else:
+                # Appened palettes other than the default to the list.
+                palettes.append(self.make_palette(file))
+
+        return palettes
 
     def make_palette(self, file):
+        """ This method loads a palette file and appends the alpha value. """
+
+        # Initialize the palette structure.
         palette = []
 
+        # TODO: reject the palette if there are not exactly 768 values.
+
         with open(file, "rb") as fh:
+            # Read in all of the color entries.
             for index in range(0, 256):
+                # Read the red, green, and blue values for the color.
                 r, g, b = fh.read(3)
 
+                # Store the red, green, and blue values as well as the alpha value.
                 palette.extend([r, g, b, 0xFF])
 
-        return(palette)
+        return palette
 
     def generate_data(self):
         # Generate two rows of values at either the min or max value of the palette.
@@ -185,19 +217,21 @@ class Fire:
     def kb_input(self, key, x, y):
         if key in [b'q', b'Q', b'\x1B']:
             stop_time = datetime.now()
+            elapsed_time = (stop_time - self.start_time).total_seconds()
+            fps = self.frames / elapsed_time
 
             glut.glutDestroyWindow(self.window)
 
-            print ("Frames: {}".format(self.frames))
-            print ("Seconds: {}".format(((stop_time - self.start_time).total_seconds())))
-            print ("FPS: {}".format(self.frames / (stop_time - self.start_time).total_seconds()))
+            print (f"Frames: {self.frames}")
+            print (f"Seconds: {elapsed_time}")
+            print (f"FPS: {fps}")
         elif key in [b'p', b'P']:
             if self.palette_index == self.num_palettes - 1:
                 self.palette_index = 0
             else:
                 self.palette_index += 1
         else:
-            print ("KEY: {}".format(key))
+            print (f"KEY: {key}")
 
     def main(self):
         glut.glutInit()
