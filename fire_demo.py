@@ -62,9 +62,8 @@ class Fire:
     def display_frame(self):
         random_bytes = self.generate_data()
 
-        """
         for row in range(self.window_h - 2):
-            row_index = row * self.window_h
+            row_index = row * self.window_w
 
             for col in range(1, self.window_w - 1):
                 value = 0
@@ -98,7 +97,7 @@ class Fire:
 
             self.front_buf[row_index + self.window_w - 1] = value
 
-        row_index = self.window_w * (self.window_h - 2)
+        row_index = (self.window_h - 2) * self.window_w
 
         for col in range(1, self.window_w - 1):
             value = 0
@@ -132,7 +131,7 @@ class Fire:
 
         self.front_buf[row_index + self.window_w - 1] = value
 
-        row_index = self.window_w * (self.window_h - 1)
+        row_index = (self.window_h - 1) * self.window_w
 
         for col in range(1, self.window_w - 1):
             value = 0
@@ -181,24 +180,21 @@ class Fire:
 
         pixels = bytes(self.display_buf)
         bitmap = np.frombuffer(pixels, np.uint8)
-        """
 
+        """
         index = 0
 
         for iteration in range(0, self.size):
             value = random.randint(0, 255)
             quad = value << 2
 
-            #self.display_buf[index] = self.palettes[self.palette_index][quad]
-            #self.display_buf[index + 1] = self.palettes[self.palette_index][quad + 1]
-            #self.display_buf[index + 2] = self.palettes[self.palette_index][quad + 2]
-            #self.display_buf[index + 3] = self.palettes[self.palette_index][quad + 3]
             self.display_buf[index:index + 3] = self.palettes[self.palette_index][quad:quad + 3]
 
             index += 4
 
         pixels = bytes(self.display_buf)
         bitmap = np.frombuffer(pixels, np.uint8)
+        """
 
         # TODO: Mapping a texture to a polygon should be much faster.
 
