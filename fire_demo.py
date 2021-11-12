@@ -87,6 +87,25 @@ class Fire:
         return random.choices([0, 255], weights=[2, 1], k=self.window_w << 1)
 
     def make_frame(self):
+        """
+            This method creates the bitmap for the frame.  The algorithm is below:
+
+            For the normal cases, average the value of the pixel directly below the
+            current one, the pixel below and to the left, below and to the right, and
+            two below.
+
+            For the left-most pixels, instead of using the one to the left, wrap to
+            the right.
+
+            For the right-most pixels, instead of using the one to the right, wrap to
+            the left.
+
+            For the bottom two rows, pull pixels from the randomly generated data.
+
+            This is a slight departure from the method used in the original GoldFire.
+        """
+
+        # Generate two rows of random data.
         random_bytes = self.generate_data()
 
         # TODO: This doesn't have to start at 0.
@@ -223,20 +242,30 @@ class Fire:
         self.frames += 1
 
     def kb_input(self, key, x_pos, y_pos):
+        """ This method handles keyboard input from the user. """
+
         if key in [b'q', b'Q', b'\x1B']:
+            # If the user pressed q or esc, terminate the program.
+
+            # Get the current time and caculate the elapsed time and FPS.
             stop_time = datetime.now()
             elapsed_time = (stop_time - self.start_time).total_seconds()
             fps = self.frames / elapsed_time
 
+            # Close the OpenGL window.
             glut.glutDestroyWindow(self.window)
 
+            # Display the statistics to the user.
             print (f"Frames: {self.frames}")
             print (f"Seconds: {elapsed_time}")
             print (f"FPS: {fps}")
         elif key in [b'p', b'P']:
+            # If the user pressed p, cycle through the palettes.
             if self.palette_index == self.num_palettes - 1:
+                # If the last palette is already in use, go back to the default palette.
                 self.palette_index = 0
             else:
+                # Go to the next palette.
                 self.palette_index += 1
 
     def main(self):
