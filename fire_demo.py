@@ -27,7 +27,7 @@ class Fire:
         #self.window_h = 240
         self.window_w = 320
         self.window_h = 200
-        self.first_row = 150
+        self.first_row = 145
         self.size = self.window_w * self.window_h
 
         self.end_to = (self.window_h - self.first_row) * self.window_w
@@ -266,6 +266,8 @@ class Fire:
         #self.display_buf[0:len(self.display_buf)] = list(map(lambda value: self.palettes[self.palette_index][value << 2:(value << 2) + 3], self.back_buf))
 
         back_buf = self.back_buf
+        display_buf = self.display_buf
+        cur_palette = self.palettes[self.palette_index]
 
         for index in range(len(back_buf)):
             if not back_buf[index]:
@@ -275,9 +277,9 @@ class Fire:
             quad = back_buf[index] << 2
             idx = index << 2
 
-            self.display_buf[idx:idx + 3] = self.palettes[self.palette_index][quad:quad + 3]
+            display_buf[idx:idx + 3] = cur_palette[quad:quad + 3]
 
-        return bytes(self.display_buf)
+        return bytes(display_buf)
 
     def display_frame(self):
         """
