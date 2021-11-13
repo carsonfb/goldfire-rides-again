@@ -23,6 +23,7 @@ class Fire:
 
         # Initialize the window size.
         self.window = None
+
         #self.window_w = 384
         #self.window_h = 240
         self.window_w = 320
@@ -39,13 +40,13 @@ class Fire:
 
         # Initialize the palettes.
         self.palette_index = 0
-        self.palettes = self.read_palettes()
+        self.palettes, self.black_pixels = self.read_palettes()
         self.num_palettes = len(self.palettes)
+        self.current_palette = []
 
-        # Initialize the display buffer and back buffer. The back buffer only has
+        # Initialize the back buffer. The back buffer only has
         # the palette lookup value, so it is only a 1/4 of the size.
         self.back_buf = [0x00] * self.size
-        self.display_buf = [0x00] * (self.size << 2)
 
     def read_palettes(self):
         """
@@ -58,6 +59,9 @@ class Fire:
         palettes = []
         palettes.append([])
 
+        black_pixels = []
+        black_pixels.append([])
+
         # Find all of the palette files in the palettes folder.
         files = glob.glob(r"palettes\*.bin")
 
@@ -68,12 +72,17 @@ class Fire:
 
             if "default.bin" in file:
                 # Set the default palette to the first palette entry.
-                palettes[0] = Fire.make_palette(file)
+                palettes[0], black_pixels[0] = Fire.make_palette(file)
             else:
                 # Appened palettes other than the default to the list.
-                palettes.append(Fire.make_palette(file))
+                pal, black = Fire.make_palette(file)
 
-        return palettes
+                palettes.append(black)
+
+        # Copy the default palette into the current palette.
+        self.current_palette = palettes[0].copy()
+
+        return palettes, black_pixels
 
     @classmethod
     def make_palette(cls, file):
@@ -81,17 +90,21 @@ class Fire:
 
         # Initialize the palette structure.
         palette = []
+        black_pixels = set()
 
         with open(file, "rb") as palette_fh:
             # Read in all of the color entries.
-            for _ in range(0, 256):
+            for index in range(0, 256):
                 # Read the red, green, and blue values for the color.
                 red, green, blue = palette_fh.read(3)
+
+                if (red + green + blue) == 0:
+                    black_pixels.add(index)
 
                 # Store the red, green, and blue values as well as the alpha value.
                 palette.extend([red, green, blue, 0xFF])
 
-        return palette
+        return palette, black_pixels
 
     def generate_data(self):
         """
@@ -126,6 +139,9 @@ class Fire:
         # Generate two rows of random data.
         random_bytes = self.generate_data()
 
+        back_buf = self.back_buf
+        window_w = self.window_w
+
 		# The fire cuts out on its own due to the algorithm.  Only the bottom 50 or so
 		# rows need to be calculated.
         for row in range(self.first_row, self.window_h - 2):
@@ -133,10 +149,10 @@ class Fire:
             # have special processing due to the random data.
 
             # The next row is pre-calculated to save processing.
-            from_index = (row + 1) * self.window_w
-            to_index = from_index - self.window_w
+            from_index = (row + 1) * window_w
+            to_index = from_index - window_w
 
-            for col in range(1, self.window_w - 1):
+            for col in range(1, window_w - 1):
                 # Process all columns except for the first and last column.  Those are
                 # special cases.
 
@@ -145,139 +161,133 @@ class Fire:
                 col_index = from_index + col
 
                 value = (
-                    self.back_buf[col_index - 1]
-                    + self.back_buf[col_index + 1]
-                    + self.back_buf[col_index]
-                    + self.back_buf[col_index + self.window_w]
+                    back_buf[col_index - 1]
+                    + back_buf[col_index + 1]
+                    + back_buf[col_index]
+                    + back_buf[col_index + window_w]
                 ) >> 2
 
-                self.back_buf[to_index + col] = value
+                back_buf[to_index + col] = value
 
             # Process the first column.
             value = (
-                self.back_buf[from_index - 1]
-                + self.back_buf[from_index + 1]
-                + self.back_buf[from_index]
-                + self.back_buf[from_index + self.window_w]
+                back_buf[from_index - 1]
+                + back_buf[from_index + 1]
+                + back_buf[from_index]
+                + back_buf[from_index + window_w]
             ) >> 2
 
-            self.back_buf[to_index] = value
+            back_buf[to_index] = value
 
             # For last column
             value = (
-                self.back_buf[from_index + self.window_w - 2]
-                + self.back_buf[from_index]
-                + self.back_buf[from_index + self.window_w - 1]
-                + self.back_buf[from_index + self.window_w + self.window_w - 1]
+                back_buf[from_index + window_w - 2]
+                + back_buf[from_index]
+                + back_buf[from_index + window_w - 1]
+                + back_buf[from_index + window_w + window_w - 1]
             ) >> 2
 
-            self.back_buf[from_index - 1] = value
+            back_buf[from_index - 1] = value
 
         # The next row is pre-calculated to save processing.
-        from_index = (self.window_h - 1) * self.window_w
-        to_index = from_index - self.window_w
+        from_index = (self.window_h - 1) * window_w
+        to_index = from_index - window_w
 
-        for col in range(1, self.window_w - 1):
+        for col in range(1, window_w - 1):
             # The pixel directly below the current one is pre-calculated
             # to save processing.
             col_index = from_index + col
 
             value = (
-                self.back_buf[col_index - 1]
-                + self.back_buf[col_index + 1]
-                + self.back_buf[col_index]
+                back_buf[col_index - 1]
+                + back_buf[col_index + 1]
+                + back_buf[col_index]
                 + random_bytes[col]
             ) >> 2
 
-            self.back_buf[from_index - self.window_w + col] = value
+            back_buf[from_index - window_w + col] = value
 
         # For column 0
         value = (
-            self.back_buf[from_index + self.window_w - 1]
-            + self.back_buf[from_index + 1]
-            + self.back_buf[from_index]
+            back_buf[from_index + window_w - 1]
+            + back_buf[from_index + 1]
+            + back_buf[from_index]
             + random_bytes[0]
         ) >> 2
 
-        self.back_buf[to_index] = value
+        back_buf[to_index] = value
 
         # For last column
         value = (
-            self.back_buf[from_index + self.window_w - 2]
-            + self.back_buf[from_index]
-            + self.back_buf[from_index + self.window_w - 1]
-            + random_bytes[self.window_w - 1]
+            back_buf[from_index + window_w - 2]
+            + back_buf[from_index]
+            + back_buf[from_index + window_w - 1]
+            + random_bytes[window_w - 1]
         ) >> 2
 
-        self.back_buf[from_index - 1] = value
+        back_buf[from_index - 1] = value
 
         # The next row is pre-calculated to save processing.
-        from_index = (self.window_h - 1) * self.window_w
-        to_index = from_index - self.window_w
+        from_index = (self.window_h - 1) * window_w
+        to_index = from_index - window_w
 
-        for col in range(1, self.window_w - 1):
+        for col in range(1, window_w - 1):
             value = (
                 + random_bytes[col - 1]
                 + random_bytes[col + 1]
                 + random_bytes[col]
-                + random_bytes[self.window_w + col]
+                + random_bytes[window_w + col]
             ) >> 2
 
-            self.back_buf[to_index + col] = value
+            back_buf[to_index + col] = value
 
         # For column 0
         value = (
-            random_bytes[self.window_w - 1]
-            + random_bytes[self.window_w + 1]
+            random_bytes[window_w - 1]
+            + random_bytes[window_w + 1]
             + random_bytes[0]
-            + random_bytes[self.window_w]
+            + random_bytes[window_w]
         ) >> 2
 
-        self.back_buf[to_index] = value
+        back_buf[to_index] = value
 
         # For last column
         value = (
-            random_bytes[self.window_w - 2]
-            + random_bytes[self.window_w]
-            + random_bytes[self.window_w - 1]
-            + random_bytes[(self.window_w << 1) - 1]
+            random_bytes[window_w - 2]
+            + random_bytes[window_w]
+            + random_bytes[window_w - 1]
+            + random_bytes[(window_w << 1) - 1]
         ) >> 2
 
-        self.back_buf[from_index - 1] = value
+        back_buf[from_index - 1] = value
 
         # Copy the bottom values to the top.  This is reversed from left-to-right but
         # Not reversing it requires a loop and was a performance hit.  This will just be
         # another difference between the original and this version.
-        self.back_buf[0:self.end_to] = self.back_buf[self.start_from:self.end_from][::-1]
+        back_buf[0:self.end_to] = back_buf[self.start_from:self.end_from][::-1]
 
-        """
-		# Fastest method but it skips the center area which will be needed.
+        self.back_buf = back_buf
 
-        for index in [*range(0, (self.window_h - self.first_row + 1) * self.window_w), *range(self.first_row * self.window_w, self.size)]:
-            if not self.back_buf[index]:
-                continue
-
-            quad = self.back_buf[index] << 2
-            idx = index << 2
-
-            self.display_buf[idx:idx + 3] = self.palettes[self.palette_index][quad:quad + 3]
-        """
-
-        #self.display_buf[0:len(self.display_buf)] = list(map(lambda value: self.palettes[self.palette_index][value << 2:(value << 2) + 3], self.back_buf))
-
-        back_buf = self.back_buf
-        display_buf = self.display_buf
         cur_palette = self.palettes[self.palette_index]
+        black_pixels = self.black_pixels[self.palette_index]
 
-        for index in range(len(back_buf)):
-            if not back_buf[index]:
-                # The 0 index in the palette should always be black.  This does not need to be calculated.
+        display_buf = [0x00] * (self.size << 2)
+
+        for index, value in enumerate(back_buf):
+            if value in black_pixels:
+                # The color is black so this does not need to be looked up and set.
                 continue
 
-            quad = back_buf[index] << 2
+            quad = value << 2
             idx = index << 2
 
             display_buf[idx:idx + 3] = cur_palette[quad:quad + 3]
+
+            #TODO: This will convert the palette to greyscale.  Do this once on a local palette and then use the regular lookup code.
+            #display_buf[idx] = int((cur_palette[quad] + cur_palette[quad + 1] + cur_palette[quad + 2]) / 3)
+            #display_buf[idx + 1] = int((cur_palette[quad] + cur_palette[quad + 1] + cur_palette[quad + 2]) / 3)
+            #display_buf[idx + 2] = int((cur_palette[quad] + cur_palette[quad + 1] + cur_palette[quad + 2]) / 3)
+            #display_buf[idx + 3] = 0xFF
 
         return bytes(display_buf)
 
@@ -289,8 +299,6 @@ class Fire:
 
 		# Generate the new frame.
         bitmap = self.make_frame()
-
-        # TODO: Mapping a texture to a polygon should be much faster.
 
         # Display the new frame.
         gl.glDrawPixels(self.window_w, self.window_h, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, bitmap)
