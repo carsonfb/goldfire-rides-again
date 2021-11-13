@@ -353,7 +353,7 @@ class Fire:
         elif key in ([b"r", b"R"]):
             # If the user pressed r, select a random palette.
             self.palette_index = random.randint(0, self.num_palettes - 1)
-            
+
             if self.grey_flag:
                 self.current_palette = self.greys[self.palette_index].copy()
             else:

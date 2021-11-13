@@ -3,7 +3,9 @@ GoldFire Redux
 
 Description
 -----------
-GoldFire was a demo created by Carson F. Ball (ABRAXAS of the programming group ΣNDVZTRÆ⅃ MµZ1K) in the mid to late 1990s (source files indicate most versions during 1995 and 1996 with a final release in 1998).  In the original version, fire came up from the bottom and was duplicated and inverted to drop down from the top as well.  In the space between the top and bottom fire, the credits were displayed in a customized font.
+GoldFire was a demo created by Carson F. Ball (ABRAXAS of the programming group ΣNDVZTRÆ⅃ MµZ1K) in the mid to late 1990s (source files indicate most versions were created during 1995 and 1996 with a final release in 1998).  This is a Python port of the original x86 Assembler code.
+
+See the notes section if you have problems running this on Windows.
 
 Features
 --------
@@ -19,6 +21,7 @@ Features
 
 - The ability to randomly change the palette from the ones that have been loaded (R).
 
+- The ability to switch between color (C) and greyscale (G).
 - The ability to quit (Q) (ESC).
 
 
@@ -26,10 +29,8 @@ Differences from the original
 -----------------------------
 Not all of the commands of the original are supported yet.  Among those are:
 - Printing ABRAXAS in the fire and having it burn out (A)
-- Dynamic conversion to greyscale (G)
 - Changing only the words to grey (W)
 - Changing only the fire to grey (F)
-- Changing everything back to color (C)
 - Changing the aspect ratio (H)
 
 Among other differences are:
@@ -39,6 +40,10 @@ Among other differences are:
 - The fire algorithm is slightly different
 - This version is slower since it is written in Python and OpenGL rather than x86 Assembler and direct hardware calls
 - This version is released under a Creative Commons license (see the License section below)
+
+Notes
+-----
+On Windows, you may have to jump through a small hoop in order to get GoldFire to run.  This YouTube video gives detailed instructions and is what I followed. _https://www.youtube.com/watch?v=a4NVQC_2S2U
 
 Credits
 -------
