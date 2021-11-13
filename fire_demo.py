@@ -33,6 +33,10 @@ class Fire:
         self.first_row = 140
         self.size = self.window_w * self.window_h
 
+        self.end_to = (self.window_h - self.first_row) * self.window_w
+        self.start_from = self.first_row * self.window_w
+        self.end_from = (self.window_h - 1) * self.window_w + self.window_w
+
         # Set the starting frames to 0.
         self.frames = 0
 
@@ -242,10 +246,7 @@ class Fire:
 
         self.back_buf[row_index - 1] = value
 
-        to_row = self.first_row
-        from_row = self.window_h - self.first_row
-		
-        self.back_buf[0:from_row * self.window_w] = self.back_buf[to_row * self.window_w:(self.window_h - 1) * self.window_w + self.window_w][::-1]
+        self.back_buf[0:self.end_to] = self.back_buf[self.start_from:self.end_from][::-1]
 
         index = 0
 
