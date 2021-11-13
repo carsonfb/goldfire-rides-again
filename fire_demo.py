@@ -27,7 +27,7 @@ class Fire:
         #self.window_h = 240
         self.window_w = 320
         self.window_h = 200
-        self.first_row = 140
+        self.first_row = 150
         self.size = self.window_w * self.window_h
 
         self.end_to = (self.window_h - self.first_row) * self.window_w
@@ -126,7 +126,7 @@ class Fire:
         # Generate two rows of random data.
         random_bytes = self.generate_data()
 
-		# The fire cuts out on its own due to the algorithm.  Only the bottom 60 or so
+		# The fire cuts out on its own due to the algorithm.  Only the bottom 50 or so
 		# rows need to be calculated.
         for row in range(self.first_row, self.window_h - 2):
             # The last two rows are calculated separately since they
@@ -254,7 +254,7 @@ class Fire:
 		# Fastest method but it skips the center area which will be needed.
 
         for index in [*range(0, (self.window_h - self.first_row + 1) * self.window_w), *range(self.first_row * self.window_w, self.size)]:
-            if not value:
+            if not self.back_buf[index]:
                 continue
 
             quad = self.back_buf[index] << 2
@@ -265,11 +265,14 @@ class Fire:
 
         #self.display_buf[0:len(self.display_buf)] = list(map(lambda value: self.palettes[self.palette_index][value << 2:(value << 2) + 3], self.back_buf))
 
-        for index in range(len(self.back_buf)):
-            if not value:
+        back_buf = self.back_buf
+
+        for index in range(len(back_buf)):
+            if not back_buf[index]:
+                # The 0 index in the palette should always be black.  This does not need to be calculated.
                 continue
 
-            quad = self.back_buf[index] << 2
+            quad = back_buf[index] << 2
             idx = index << 2
 
             self.display_buf[idx:idx + 3] = self.palettes[self.palette_index][quad:quad + 3]
