@@ -8,10 +8,18 @@ import numpy as np
 
 # https://www.youtube.com/watch?v=a4NVQC_2S2U
 
-# TODO: Remove the window frame
-# TODO: Add a README.md
-
 class Fire:
+    """
+        This class creates a modified version of the old demo GoldFire.  The
+        fire routine calculations are slightly adjusted from the original, some
+        of the features have not been implemented yet (may never be), and the
+        original had fire at both the top and bottom of the screen.
+
+        The palette file format from the original is supported and most of the
+        palettes from the original are included.  These are binary files
+        consisting of 256 triplets of red, green, and blue values.
+    """
+
     def __init__(self):
         # Setup the starting time.  It will be initialized later.
         self.start_time = None
@@ -72,7 +80,7 @@ class Fire:
 
         with open(file, "rb") as palette_fh:
             # Read in all of the color entries.
-            for index in range(0, 256):
+            for _ in range(0, 256):
                 # Read the red, green, and blue values for the color.
                 red, green, blue = palette_fh.read(3)
 
@@ -87,7 +95,7 @@ class Fire:
             of the palette. These are used in the averaging algorithm.
         """
 
-        return random.choices([0, 255], weights=[2, 1], k=self.window_w << 1)
+        return random.choices([0, 255], weights=[3, 1], k=self.window_w << 1)
 
     def make_frame(self):
         """
@@ -247,19 +255,19 @@ class Fire:
             an updated frame of the fire.
         """
 
+		# Generate the new frame.
         bitmap = self.make_frame()
 
         # TODO: Mapping a texture to a polygon should be much faster.
 
         # Display the new frame.
-        gl.glLoadIdentity()
         gl.glDrawPixels(self.window_w, self.window_h, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, bitmap)
         glut.glutSwapBuffers()
 
         # Increment the number of frames for the purpose of calculating the FPS.
         self.frames += 1
 
-    def kb_input(self, key, x_pos, y_pos):
+    def kb_input(self, key, _x_pos, _y_pos):
         """ This method handles keyboard input from the user. """
 
         if key in [b'q', b'Q', b'\x1B']:
@@ -313,6 +321,11 @@ class Fire:
         glut.glutIdleFunc(self.display_frame)
         glut.glutKeyboardFunc(self.kb_input)
         self.start_time = datetime.now()
+
+		# Flip the image upsid-right.
+        gl.glLoadIdentity()
+        gl.glRasterPos2f(-1,1);
+        gl.glPixelZoom(1, -1);
 
         # Start the main program loop.
         glut.glutMainLoop()
