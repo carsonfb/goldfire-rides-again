@@ -1,3 +1,14 @@
+"""
+    This program is a new version of the old PC demo GoldFire by Carson F. Ball.
+    The original was written in x86 Assembly and has been ported mostly as an
+    exercise to see if it could run at a decent speed in Python.  The original
+    was limited to the scanline refresh and had a hard-limit of 60 FPS because
+    of this; without the limitation, it was faster than that on a Pentium I 60MHz
+    but I don't remember how much faster.  The current version (running at the
+    same resolution) is ~80 FPS on modern hardware.  However, not all of the
+    features have been implemented yet. 
+"""
+
 import os
 from datetime import datetime
 import glob
