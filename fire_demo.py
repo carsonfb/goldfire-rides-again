@@ -6,7 +6,9 @@
     of this; without the limitation, it was faster than that on a Pentium I 60MHz
     but I don't remember how much faster.  The current version (running at the
     same resolution) is ~80 FPS on modern hardware.  However, not all of the
-    features have been implemented yet. 
+    features have been implemented yet.
+
+    See the README.md for more details and licensing information.
 """
 
 import os
