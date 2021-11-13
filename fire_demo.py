@@ -28,6 +28,7 @@ class Fire:
         self.window = None
         self.window_w = 320
         self.window_h = 200
+        self.first_row = 140
         self.size = self.window_w * self.window_h
 
         # Set the starting frames to 0.
@@ -122,8 +123,9 @@ class Fire:
         # Generate two rows of random data.
         random_bytes = self.generate_data()
 
-        # TODO: This doesn't have to start at 0.
-        for row in range(self.window_h - 2):
+		# The fire cuts out on its own due to the algorithm.  Only the bottom 60 or so
+		# rows need to be calculated.
+        for row in range(self.first_row, self.window_h - 2):
             # The last two rows are calculated separately since they
             # have special processing due to the random data.
 
@@ -293,6 +295,8 @@ class Fire:
             else:
                 # Go to the next palette.
                 self.palette_index += 1
+        elif key in ([b'r', b'R']):
+            self.palette_index = random.randint(0, self.num_palettes - 1)
 
     def main(self):
         """
