@@ -131,6 +131,7 @@ class Fire:
 
             # The next row is pre-calculated to save processing.
             row_index = (row + 1) * self.window_w
+            #inverse_index = (self.window_h - row + 1) * self.window_w
 
             for col in range(1, self.window_w - 1):
                 # Process all columns except for the first and last column.
@@ -147,6 +148,7 @@ class Fire:
                 ) >> 2
 
                 self.back_buf[row_index - self.window_w + col] = value
+                #self.back_buf[inverse_index + col] = value
 
             # Process the first column.
             value = (
@@ -237,6 +239,11 @@ class Fire:
         ) >> 2
 
         self.back_buf[row_index - 1] = value
+
+        for row in range(self.first_row, self.window_h):
+            row_calc = (self.window_h - row + 1) * self.window_w
+
+            self.back_buf[row_calc:row_calc + self.window_w] = self.back_buf[row * self.window_w:row * self.window_w + self.window_w]
 
         index = 0
 
