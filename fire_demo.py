@@ -137,7 +137,8 @@ class Fire:
             to_index = from_index - self.window_w
 
             for col in range(1, self.window_w - 1):
-                # Process all columns except for the first and last column.  Those are special cases.
+                # Process all columns except for the first and last column.  Those are
+                # special cases.
 
                 # The pixel directly below the current one is pre-calculated
                 # to save processing.
@@ -249,14 +250,29 @@ class Fire:
         # another difference between the original and this version.
         self.back_buf[0:self.end_to] = self.back_buf[self.start_from:self.end_from][::-1]
 
-        index = 0
+        """
+		# Fastest method but it skips the center area which will be needed.
 
-        for value in self.back_buf:
-            quad = value << 2
+        for index in [*range(0, (self.window_h - self.first_row + 1) * self.window_w), *range(self.first_row * self.window_w, self.size)]:
+            if not value:
+                continue
 
-            self.display_buf[index:index + 3] = self.palettes[self.palette_index][quad:quad + 3]
+            quad = self.back_buf[index] << 2
+            idx = index << 2
 
-            index += 4
+            self.display_buf[idx:idx + 3] = self.palettes[self.palette_index][quad:quad + 3]
+        """
+
+        #self.display_buf[0:len(self.display_buf)] = list(map(lambda value: self.palettes[self.palette_index][value << 2:(value << 2) + 3], self.back_buf))
+
+        for index in range(len(self.back_buf)):
+            if not value:
+                continue
+
+            quad = self.back_buf[index] << 2
+            idx = index << 2
+
+            self.display_buf[idx:idx + 3] = self.palettes[self.palette_index][quad:quad + 3]
 
         return bytes(self.display_buf)
 
