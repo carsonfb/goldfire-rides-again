@@ -136,15 +136,15 @@ class Fire:
             # have special processing due to the random data.
 
             # The next row is pre-calculated to save processing.
-            row_index = (row + 1) * self.window_w
-            #inverse_index = (self.window_h - row + 1) * self.window_w
+            from_index = (row + 1) * self.window_w
+            to_index = from_index - self.window_w
 
             for col in range(1, self.window_w - 1):
                 # Process all columns except for the first and last column.
 
                 # The pixel directly below the current one is pre-calculated
                 # to save processing.
-                col_index = row_index + col
+                col_index = from_index + col
 
                 value = (
                     self.back_buf[col_index - 1]
@@ -153,36 +153,36 @@ class Fire:
                     + self.back_buf[col_index + self.window_w]
                 ) >> 2
 
-                self.back_buf[row_index - self.window_w + col] = value
-                #self.back_buf[inverse_index + col] = value
+                self.back_buf[to_index + col] = value
 
             # Process the first column.
             value = (
-                self.back_buf[row_index- 1]
-                + self.back_buf[row_index + 1]
-                + self.back_buf[row_index]
-                + self.back_buf[row_index + self.window_w]
+                self.back_buf[from_index- 1]
+                + self.back_buf[from_index + 1]
+                + self.back_buf[from_index]
+                + self.back_buf[from_index + self.window_w]
             ) >> 2
 
-            self.back_buf[row_index - self.window_w] = value
+            self.back_buf[to_index] = value
 
             # For last column
             value = (
-                self.back_buf[row_index + self.window_w - 2]
-                + self.back_buf[row_index]
-                + self.back_buf[row_index + self.window_w - 1]
-                + self.back_buf[row_index + self.window_w + self.window_w - 1]
+                self.back_buf[from_index + self.window_w - 2]
+                + self.back_buf[from_index]
+                + self.back_buf[from_index + self.window_w - 1]
+                + self.back_buf[from_index + self.window_w + self.window_w - 1]
             ) >> 2
 
-            self.back_buf[row_index - 1] = value
+            self.back_buf[from_index - 1] = value
 
         # The next row is pre-calculated to save processing.
-        row_index = (self.window_h - 1) * self.window_w
+        from_index = (self.window_h - 1) * self.window_w
+        to_index = from_index - self.window_w
 
         for col in range(1, self.window_w - 1):
             # The pixel directly below the current one is pre-calculated
             # to save processing.
-            col_index = row_index + col
+            col_index = from_index + col
 
             value = (
                 self.back_buf[col_index - 1]
@@ -191,30 +191,31 @@ class Fire:
                 + random_bytes[col]
             ) >> 2
 
-            self.back_buf[row_index - self.window_w + col] = value
+            self.back_buf[from_index - self.window_w + col] = value
 
         # For column 0
         value = (
-            self.back_buf[row_index + self.window_w - 1]
-            + self.back_buf[row_index + 1]
-            + self.back_buf[row_index]
+            self.back_buf[from_index + self.window_w - 1]
+            + self.back_buf[from_index + 1]
+            + self.back_buf[from_index]
             + random_bytes[0]
         ) >> 2
 
-        self.back_buf[row_index - self.window_w] = value
+        self.back_buf[to_index] = value
 
         # For last column
         value = (
-            self.back_buf[row_index + self.window_w - 2]
-            + self.back_buf[row_index]
-            + self.back_buf[row_index + self.window_w - 1]
+            self.back_buf[from_index + self.window_w - 2]
+            + self.back_buf[from_index]
+            + self.back_buf[from_index + self.window_w - 1]
             + random_bytes[self.window_w - 1]
         ) >> 2
 
-        self.back_buf[row_index - 1] = value
+        self.back_buf[from_index - 1] = value
 
         # The next row is pre-calculated to save processing.
-        row_index = (self.window_h - 1) * self.window_w
+        from_index = (self.window_h - 1) * self.window_w
+        to_index = from_index - self.window_w
 
         for col in range(1, self.window_w - 1):
             value = (
@@ -224,7 +225,7 @@ class Fire:
                 + random_bytes[self.window_w + col]
             ) >> 2
 
-            self.back_buf[row_index - self.window_w + col] = value
+            self.back_buf[to_index + col] = value
 
         # For column 0
         value = (
@@ -234,7 +235,7 @@ class Fire:
             + random_bytes[self.window_w]
         ) >> 2
 
-        self.back_buf[row_index - self.window_w] = value
+        self.back_buf[to_index] = value
 
         # For last column
         value = (
@@ -244,8 +245,11 @@ class Fire:
             + random_bytes[(self.window_w << 1) - 1]
         ) >> 2
 
-        self.back_buf[row_index - 1] = value
+        self.back_buf[from_index - 1] = value
 
+        # Copy the bottom values to the top.  This is reversed from left-to-right but
+        # Not reversing it requires a loop and was a performance hit.  This will just be
+        # another difference between the original and this version.
         self.back_buf[0:self.end_to] = self.back_buf[self.start_from:self.end_from][::-1]
 
         index = 0
