@@ -26,6 +26,8 @@ class Fire:
 
         # Initialize the window size.
         self.window = None
+        #self.window_w = 384
+        #self.window_h = 240
         self.window_w = 320
         self.window_h = 200
         self.first_row = 140
@@ -240,10 +242,10 @@ class Fire:
 
         self.back_buf[row_index - 1] = value
 
-        for row in range(self.first_row, self.window_h):
-            row_calc = (self.window_h - row + 1) * self.window_w
-
-            self.back_buf[row_calc:row_calc + self.window_w] = self.back_buf[row * self.window_w:row * self.window_w + self.window_w]
+        to_row = self.first_row
+        from_row = self.window_h - self.first_row
+		
+        self.back_buf[0:from_row * self.window_w] = self.back_buf[to_row * self.window_w:(self.window_h - 1) * self.window_w + self.window_w][::-1]
 
         index = 0
 

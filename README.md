@@ -34,6 +34,7 @@ Not all of the commands of the original are supported yet.  Among those are:
 
 Among other differences are:
 - There are no words on the screen
+- The fire at the top is reversed left-to-right from the fire on the bottom.  Originally these were the same but having them reversed is a performance change.
 - The frames / second are displayed when the user quits instead of the credits
 - The fire algorithm is slightly different
 - This version is slower since it is written in Python and OpenGL rather than x86 Assembler and direct hardware calls
