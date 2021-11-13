@@ -4,9 +4,6 @@ import glob
 import random
 import OpenGL.GL as gl
 import OpenGL.GLUT as glut
-import numpy as np
-
-# https://www.youtube.com/watch?v=a4NVQC_2S2U
 
 class Fire:
     """
@@ -140,7 +137,7 @@ class Fire:
             to_index = from_index - self.window_w
 
             for col in range(1, self.window_w - 1):
-                # Process all columns except for the first and last column.
+                # Process all columns except for the first and last column.  Those are special cases.
 
                 # The pixel directly below the current one is pre-calculated
                 # to save processing.
@@ -157,7 +154,7 @@ class Fire:
 
             # Process the first column.
             value = (
-                self.back_buf[from_index- 1]
+                self.back_buf[from_index - 1]
                 + self.back_buf[from_index + 1]
                 + self.back_buf[from_index]
                 + self.back_buf[from_index + self.window_w]
@@ -261,9 +258,7 @@ class Fire:
 
             index += 4
 
-        pixels = bytes(self.display_buf)
-
-        return np.frombuffer(pixels, np.uint8)
+        return bytes(self.display_buf)
 
     def display_frame(self):
         """
