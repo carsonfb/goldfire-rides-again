@@ -40,9 +40,13 @@ class Fire:
 
         # Initialize the palettes.
         self.palette_index = 0
-        self.palettes, self.black_pixels = self.read_palettes()
+        self.palettes, self.greys, self.black_pixels = self.read_palettes()
         self.num_palettes = len(self.palettes)
-        self.current_palette = []
+
+        self.grey_flag = False
+
+        # Copy the default palette into the current palette.
+        self.current_palette = self.palettes[self.palette_index].copy()
 
         # Initialize the back buffer. The back buffer only has
         # the palette lookup value, so it is only a 1/4 of the size.
@@ -59,6 +63,9 @@ class Fire:
         palettes = []
         palettes.append([])
 
+        greys = []
+        greys.append([])
+
         black_pixels = []
         black_pixels.append([])
 
@@ -72,18 +79,16 @@ class Fire:
 
             if "default.bin" in file:
                 # Set the default palette to the first palette entry.
-                palettes[0], black_pixels[0] = Fire.make_palette(file)
+                palettes[0], greys[0], black_pixels[0] = Fire.make_palette(file)
             else:
                 # Appened palettes other than the default to the list.
-                pal, black = Fire.make_palette(file)
+                pal, grey, black = Fire.make_palette(file)
 
                 palettes.append(pal)
+                greys.append(grey)
                 black_pixels.append(black)
 
-        # Copy the default palette into the current palette.
-        self.current_palette = palettes[0].copy()
-
-        return palettes, black_pixels
+        return palettes, greys, black_pixels
 
     @classmethod
     def make_palette(cls, file):
@@ -91,6 +96,7 @@ class Fire:
 
         # Initialize the palette structure.
         palette = []
+        greys = []
         black_pixels = set()
 
         with open(file, "rb") as palette_fh:
@@ -99,13 +105,18 @@ class Fire:
                 # Read the red, green, and blue values for the color.
                 red, green, blue = palette_fh.read(3)
 
-                if (red + green + blue) == 0:
+                total = red + green + blue
+                grey = int(total / 3)
+
+                if (total) == 0:
+                    # If the color is black, add it to the list.
                     black_pixels.add(index)
 
                 # Store the red, green, and blue values as well as the alpha value.
                 palette.extend([red, green, blue, 0xFF])
+                greys.extend([grey, grey, grey, 0xFF])
 
-        return palette, black_pixels
+        return palette, greys, black_pixels
 
     def generate_data(self):
         """
@@ -181,7 +192,7 @@ class Fire:
 
             back_buf[to_index] = value
 
-            # For last column
+            # Process the last column.
             value = (
                 back_buf[from_index + window_w - 2]
                 + back_buf[from_index]
@@ -209,7 +220,7 @@ class Fire:
 
             back_buf[from_index - window_w + col] = value
 
-        # For column 0
+        # Process the first column.
         value = (
             back_buf[from_index + window_w - 1]
             + back_buf[from_index + 1]
@@ -219,7 +230,7 @@ class Fire:
 
         back_buf[to_index] = value
 
-        # For last column
+        # Process the last column.
         value = (
             back_buf[from_index + window_w - 2]
             + back_buf[from_index]
@@ -243,7 +254,7 @@ class Fire:
 
             back_buf[to_index + col] = value
 
-        # For column 0
+        # Process the first column.
         value = (
             random_bytes[window_w - 1]
             + random_bytes[window_w + 1]
@@ -253,7 +264,7 @@ class Fire:
 
         back_buf[to_index] = value
 
-        # For last column
+        # Process the last column.
         value = (
             random_bytes[window_w - 2]
             + random_bytes[window_w]
@@ -272,7 +283,7 @@ class Fire:
         self.back_buf = back_buf
 
 		# Make local copies to avoid the overhead of lookups.
-        cur_palette = self.palettes[self.palette_index]
+        cur_palette = self.current_palette
         black_pixels = self.black_pixels[self.palette_index]
 
 		# Clear the display buffer by setting it to black.
@@ -283,17 +294,12 @@ class Fire:
                 # The color is black so this does not need to be looked up and set.
                 continue
 
+            # Pre-calculate indexing variables.
             quad = value << 2
             idx = index << 2
 
             # Copy the RGBA values from the palette to the display buffer.
             display_buf[idx:idx + 3] = cur_palette[quad:quad + 3]
-
-            #TODO: This will convert the palette to greyscale.  Do this once on a local palette and then use the regular lookup code.
-            #display_buf[idx] = int((cur_palette[quad] + cur_palette[quad + 1] + cur_palette[quad + 2]) / 3)
-            #display_buf[idx + 1] = int((cur_palette[quad] + cur_palette[quad + 1] + cur_palette[quad + 2]) / 3)
-            #display_buf[idx + 2] = int((cur_palette[quad] + cur_palette[quad + 1] + cur_palette[quad + 2]) / 3)
-            #display_buf[idx + 3] = 0xFF
 
         return bytes(display_buf)
 
@@ -331,7 +337,7 @@ class Fire:
             print (f"Frames: {self.frames}")
             print (f"Seconds: {elapsed_time}")
             print (f"FPS: {fps}")
-        elif key in [b'p', b'P']:
+        elif key in [b"p", b"P"]:
             # If the user pressed p, cycle through the palettes.
             if self.palette_index == self.num_palettes - 1:
                 # If the last palette is already in use, go back to the default palette.
@@ -339,8 +345,29 @@ class Fire:
             else:
                 # Go to the next palette.
                 self.palette_index += 1
-        elif key in ([b'r', b'R']):
+
+            if self.grey_flag:
+                self.current_palette = self.greys[self.palette_index].copy()
+            else:
+                self.current_palette = self.palettes[self.palette_index].copy()
+        elif key in ([b"r", b"R"]):
+            # If the user pressed r, select a random palette.
             self.palette_index = random.randint(0, self.num_palettes - 1)
+            
+            if self.grey_flag:
+                self.current_palette = self.greys[self.palette_index].copy()
+            else:
+                self.current_palette = self.palettes[self.palette_index].copy()
+        elif key in ([b"g", b"G"]):
+            # If the user pressed g, change the palette to greyscale.
+            self.grey_flag = True
+
+            self.current_palette = self.greys[self.palette_index]
+        elif key in ([b"c", b"C"]):
+            # If the user pressed c, change the palette to color.
+            self.grey_flag = False
+
+            self.current_palette = self.palettes[self.palette_index]
 
     def main(self):
         """
