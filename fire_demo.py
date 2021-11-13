@@ -324,8 +324,8 @@ class Fire:
 
 		# Flip the image upsid-right.
         gl.glLoadIdentity()
-        gl.glRasterPos2f(-1,1);
-        gl.glPixelZoom(1, -1);
+        gl.glRasterPos2f(-1,1)
+        gl.glPixelZoom(1, -1)
 
         # Start the main program loop.
         glut.glutMainLoop()
