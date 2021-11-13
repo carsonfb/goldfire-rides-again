@@ -77,7 +77,8 @@ class Fire:
                 # Appened palettes other than the default to the list.
                 pal, black = Fire.make_palette(file)
 
-                palettes.append(black)
+                palettes.append(pal)
+                black_pixels.append(black)
 
         # Copy the default palette into the current palette.
         self.current_palette = palettes[0].copy()
@@ -139,6 +140,7 @@ class Fire:
         # Generate two rows of random data.
         random_bytes = self.generate_data()
 
+		# Make local copies to avoid the overhead of lookups.
         back_buf = self.back_buf
         window_w = self.window_w
 
@@ -266,11 +268,14 @@ class Fire:
         # another difference between the original and this version.
         back_buf[0:self.end_to] = back_buf[self.start_from:self.end_from][::-1]
 
+		# Update the instance's back buffer.
         self.back_buf = back_buf
 
+		# Make local copies to avoid the overhead of lookups.
         cur_palette = self.palettes[self.palette_index]
         black_pixels = self.black_pixels[self.palette_index]
 
+		# Clear the display buffer by setting it to black.
         display_buf = [0x00] * (self.size << 2)
 
         for index, value in enumerate(back_buf):
@@ -281,6 +286,7 @@ class Fire:
             quad = value << 2
             idx = index << 2
 
+            # Copy the RGBA values from the palette to the display buffer.
             display_buf[idx:idx + 3] = cur_palette[quad:quad + 3]
 
             #TODO: This will convert the palette to greyscale.  Do this once on a local palette and then use the regular lookup code.
