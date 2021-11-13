@@ -1,4 +1,3 @@
-numpy==1.21.4
 pylint==2.11.1
 PyOpenGL
 PyOpenGL-accelerate
