@@ -56,6 +56,7 @@ class Fire:
         self.palettes, self.greys, self.black_pixels = self.read_palettes()
         self.num_palettes = len(self.palettes)
 
+        # Set the initial state to color.
         self.grey_flag = False
 
         # Copy the default palette into the current palette.
