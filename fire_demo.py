@@ -12,11 +12,12 @@
 """
 
 import os
-from datetime import datetime
+from time import perf_counter
 import glob
 import random
 import OpenGL.GL as gl
 import OpenGL.GLUT as glut
+import numpy as np
 
 class Fire:
     """
@@ -362,8 +363,8 @@ class Fire:
             # If the user pressed q or esc, terminate the program.
 
             # Get the current time and caculate the elapsed time and FPS.
-            stop_time = datetime.now()
-            elapsed_time = (stop_time - self.fps['start_time']).total_seconds()
+            stop_time = perf_counter()
+            elapsed_time = stop_time - self.fps['start_time']
             fps = self.fps['frames'] / elapsed_time
 
             # Close the OpenGL window.
@@ -431,7 +432,7 @@ class Fire:
         glut.glutDisplayFunc(self.display_frame)
         glut.glutIdleFunc(self.display_frame)
         glut.glutKeyboardFunc(self.kb_input)
-        self.fps['start_time'] = datetime.now()
+        self.fps['start_time'] = perf_counter()
 
 		# Flip the image upsid-right.
         gl.glLoadIdentity()
