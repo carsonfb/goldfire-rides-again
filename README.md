@@ -16,14 +16,10 @@ Features
 * psydel1.bin: This is a psychedlic palette, though pal.bin seems trippier to me.
 * purple.bin: This is a palette swap of default.bin but with purple (same intensity, different hue).
 * seagrn1.bin: This is a palette swap of default.bin but with green (same intensity, different hue).
-
-- The ability to import your own palettes.  Palette files are binary files consisting of (in order) red, green, and blue triplets. And 786 byte file dropped into the palettes folder with the extension bin will be loaded but, unless you want odd results, I'd recommend creating actual palette files.  This can be done relatively easily by making a copy of one of the palette swap files and changing the red, green, and blue values but keeping the sums of the three in each triplet the same as they were to begin with.  For example if the values were 128, 63, and 44, then 188, 23, 24 would be appropriate.
-
+- The ability to import your own palettes.  Palette files are binary files consisting of (in order) red, green, and blue triplets. Any 786 byte file dropped into the palettes folder with the extension bin will be loaded but, unless you want odd results, I'd recommend creating actual palette files.  This can be done relatively easily by making a copy of one of the palette swap files and changing the red, green, and blue values but keeping the sums of the three in each triplet the same as they were to begin with.  For example if the values were 128, 63, and 44, then 188, 23, 24 would be appropriate.
 - The ability to randomly change the palette from the ones that have been loaded (R).
-
 - The ability to switch between color (C) and greyscale (G).
 - The ability to quit (Q) (ESC).
-
 
 Differences from the original
 -----------------------------
@@ -38,7 +34,7 @@ Among other differences are:
 - The fire at the top is reversed left-to-right from the fire on the bottom.  Originally these were the same but having them reversed is a performance change.
 - The frames / second are displayed when the user quits instead of the credits
 - The fire algorithm is slightly different
-- This version is slower since it is written in Python and OpenGL rather than x86 Assembler and direct hardware calls
+- This version is slower since it is written in Python and OpenGL rather than x86 Assembler and direct hardware calls.  Although, the user-facing speed is actually higher.
 - This version is released under a Creative Commons license (see the License section below)
 
 Notes
@@ -49,7 +45,7 @@ Credits
 -------
 Creator of the original GoldFire: Carson F. Ball
 Creator of GoldFire Redux: Carson F. Ball
-Designer of the palettes (escept pal.bin which is the system palette): Carson F. Ball
+Designer of the palettes (except pal.bin which is the system palette): Carson F. Ball
 Testers of the original GoldFire: Chris Lehman and Dan Lehman
 
 License

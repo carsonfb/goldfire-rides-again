@@ -28,43 +28,65 @@ class Fire:
         The palette file format from the original is supported and most of the
         palettes from the original are included.  These are binary files
         consisting of 256 triplets of red, green, and blue values.
+
+        Speed Notes (see the git history for more details on some of the changes):
+
+        * In testing x << 1 and x << 2 was slightly faster than * 2 and * 4 respectively.
+          This doesn't matter very much on each frame, but adds up over time.
+
+        * In testing x >> 1 and >> x 2 was significantly faster than int(x / 2) and
+          int (x / 4) respectively.
+
+        * Making local copies of frequently used variables rather than looking them
+          up from self each time had an appreciable impact on speed.
+
+        * Only processing lines that actually change before the fire tapers off
+          had a large impact on speed (first_row).
+
+        * Skipping the processing of any pixel that would be black also had a
+          large impact on speed (black_pixels).
     """
 
     def __init__(self):
-        # Setup the starting time.  It will be initialized later.
-        self.start_time = None
+        # Setup the starting time and frames for determing the fps.  The time
+        # will be initialized later.
+        self.fps = {
+            'start_time': None,
+            'frames': 0
+        }
 
-        # Initialize the window size.
-        self.window = None
+        # Initialize the window handle, dimensions, first row of fire, and size.
+        self.window = {
+           'handle': None,
+           'w': 320, # 384
+           'h': 200, # 240
+           'first_row': 145,
+           'size': 0
+        }
 
-        #self.window_w = 384
-        #self.window_h = 240
-        self.window_w = 320
-        self.window_h = 200
-        self.first_row = 145
-        self.size = self.window_w * self.window_h
+        self.window['size'] = self.window['w'] * self.window['h']
 
-        self.end_to = (self.window_h - self.first_row) * self.window_w
-        self.start_from = self.first_row * self.window_w
-        self.end_from = (self.window_h - 1) * self.window_w + self.window_w
+        self.end_to = (self.window['h'] - self.window['first_row']) * self.window['w']
+        self.start_from = self.window['first_row'] * self.window['w']
+        self.end_from = (self.window['h'] - 1) * self.window['w'] + self.window['w']
 
-        # Set the starting frames to 0.
-        self.frames = 0
+        # Setup the palette index, grey flag, and the number of palettes.
+        self.palette_flags = {
+            'index': 0,
+            'grey': False,
+            'total': 0
+        }
 
         # Initialize the palettes.
-        self.palette_index = 0
         self.palettes, self.greys, self.black_pixels = self.read_palettes()
-        self.num_palettes = len(self.palettes)
-
-        # Set the initial state to color.
-        self.grey_flag = False
+        self.palette_flags['total'] = len(self.palettes)
 
         # Copy the default palette into the current palette.
-        self.current_palette = self.palettes[self.palette_index].copy()
+        self.current_palette = self.palettes[self.palette_flags['index']].copy()
 
         # Initialize the back buffer. The back buffer only has
         # the palette lookup value, so it is only a 1/4 of the size.
-        self.back_buf = [0x00] * self.size
+        self.back_buf = [0x00] * self.window['size']
 
     def read_palettes(self):
         """
@@ -138,7 +160,7 @@ class Fire:
             of the palette. These are used in the averaging algorithm.
         """
 
-        return random.choices([0, 255], weights=[3, 1], k=self.window_w << 1)
+        return random.choices([0, 255], weights=[3, 1], k=self.window['w'] << 1)
 
     def make_frame(self):
         """
@@ -167,11 +189,11 @@ class Fire:
 
 		# Make local copies to avoid the overhead of lookups.
         back_buf = self.back_buf
-        window_w = self.window_w
+        window_w = self.window['w']
 
 		# The fire cuts out on its own due to the algorithm.  Only the bottom 50 or so
 		# rows need to be calculated.
-        for row in range(self.first_row, self.window_h - 2):
+        for row in range(self.window['first_row'], self.window['h'] - 2):
             # The last two rows are calculated separately since they
             # have special processing due to the random data.
 
@@ -217,7 +239,7 @@ class Fire:
             back_buf[from_index - 1] = value
 
         # The next row is pre-calculated to save processing.
-        from_index = (self.window_h - 1) * window_w
+        from_index = (self.window['h'] - 1) * window_w
         to_index = from_index - window_w
 
         for col in range(1, window_w - 1):
@@ -255,7 +277,7 @@ class Fire:
         back_buf[from_index - 1] = value
 
         # The next row is pre-calculated to save processing.
-        from_index = (self.window_h - 1) * window_w
+        from_index = (self.window['h'] - 1) * window_w
         to_index = from_index - window_w
 
         for col in range(1, window_w - 1):
@@ -298,10 +320,10 @@ class Fire:
 
 		# Make local copies to avoid the overhead of lookups.
         cur_palette = self.current_palette
-        black_pixels = self.black_pixels[self.palette_index]
+        black_pixels = self.black_pixels[self.palette_flags['index']]
 
 		# Clear the display buffer by setting it to black.
-        display_buf = [0x00] * (self.size << 2)
+        display_buf = [0x00] * (self.window['size'] << 2)
 
         for index, value in enumerate(back_buf):
             if value in black_pixels:
@@ -327,11 +349,11 @@ class Fire:
         bitmap = self.make_frame()
 
         # Display the new frame.
-        gl.glDrawPixels(self.window_w, self.window_h, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, bitmap)
+        gl.glDrawPixels(self.window['w'], self.window['h'], gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, bitmap)
         glut.glutSwapBuffers()
 
         # Increment the number of frames for the purpose of calculating the FPS.
-        self.frames += 1
+        self.fps['frames'] += 1
 
     def kb_input(self, key, _x_pos, _y_pos):
         """ This method handles keyboard input from the user. """
@@ -341,47 +363,47 @@ class Fire:
 
             # Get the current time and caculate the elapsed time and FPS.
             stop_time = datetime.now()
-            elapsed_time = (stop_time - self.start_time).total_seconds()
-            fps = self.frames / elapsed_time
+            elapsed_time = (stop_time - self.fps['start_time']).total_seconds()
+            fps = self.fps['frames'] / elapsed_time
 
             # Close the OpenGL window.
-            glut.glutDestroyWindow(self.window)
+            glut.glutDestroyWindow(self.window['handle'])
 
             # Display the statistics to the user.
-            print (f"Frames: {self.frames}")
+            print (f"Frames: {self.fps['frames']}")
             print (f"Seconds: {elapsed_time}")
             print (f"FPS: {fps}")
         elif key in [b"p", b"P"]:
             # If the user pressed p, cycle through the palettes.
-            if self.palette_index == self.num_palettes - 1:
+            if self.palette_flags['index'] == self.palette_flags['total'] - 1:
                 # If the last palette is already in use, go back to the default palette.
-                self.palette_index = 0
+                self.palette_flags['index'] = 0
             else:
                 # Go to the next palette.
-                self.palette_index += 1
+                self.palette_flags['index'] += 1
 
-            if self.grey_flag:
-                self.current_palette = self.greys[self.palette_index].copy()
+            if self.palette_flags['grey']:
+                self.current_palette = self.greys[self.palette_flags['index']].copy()
             else:
-                self.current_palette = self.palettes[self.palette_index].copy()
+                self.current_palette = self.palettes[self.palette_flags['index']].copy()
         elif key in ([b"r", b"R"]):
             # If the user pressed r, select a random palette.
-            self.palette_index = random.randint(0, self.num_palettes - 1)
+            self.palette_flags['index'] = random.randint(0, self.palette_flags['total'] - 1)
 
-            if self.grey_flag:
-                self.current_palette = self.greys[self.palette_index].copy()
+            if self.palette_flags['grey']:
+                self.current_palette = self.greys[self.palette_flags['index']].copy()
             else:
-                self.current_palette = self.palettes[self.palette_index].copy()
+                self.current_palette = self.palettes[self.palette_flags['index']].copy()
         elif key in ([b"g", b"G"]):
             # If the user pressed g, change the palette to greyscale.
-            self.grey_flag = True
+            self.palette_flags['grey'] = True
 
-            self.current_palette = self.greys[self.palette_index]
+            self.current_palette = self.greys[self.palette_flags['index']]
         elif key in ([b"c", b"C"]):
             # If the user pressed c, change the palette to color.
-            self.grey_flag = False
+            self.palette_flags['grey'] = False
 
-            self.current_palette = self.palettes[self.palette_index]
+            self.current_palette = self.palettes[self.palette_flags['index']]
 
     def main(self):
         """
@@ -396,20 +418,20 @@ class Fire:
         # Get the width and height of the monitor and the center for the window.
         screen_w = glut.glutGet(glut.GLUT_SCREEN_WIDTH)
         screen_h = glut.glutGet(glut.GLUT_SCREEN_HEIGHT)
-        center_x = int((screen_w - self.window_w) >> 1)
-        center_y = int((screen_h - self.window_h) >> 1)
+        center_x = int((screen_w - self.window['w']) >> 1)
+        center_y = int((screen_h - self.window['h']) >> 1)
 
         # Create the OpenGL window and display it.
         glut.glutInitDisplayMode(glut.GLUT_RGBA)
-        glut.glutInitWindowSize(self.window_w, self.window_h)
+        glut.glutInitWindowSize(self.window['w'], self.window['h'])
         glut.glutInitWindowPosition(center_x, center_y)
-        self.window = glut.glutCreateWindow("GoldFire Rides Again")
+        self.window['handle']= glut.glutCreateWindow("GoldFire Rides Again")
 
         # Setup the callbacks for OpenGL as well as initialize the start time.
         glut.glutDisplayFunc(self.display_frame)
         glut.glutIdleFunc(self.display_frame)
         glut.glutKeyboardFunc(self.kb_input)
-        self.start_time = datetime.now()
+        self.fps['start_time'] = datetime.now()
 
 		# Flip the image upsid-right.
         gl.glLoadIdentity()
