@@ -17,7 +17,6 @@ import glob
 import random
 import OpenGL.GL as gl
 import OpenGL.GLUT as glut
-import numpy as np
 
 class Fire:
     """
@@ -46,6 +45,9 @@ class Fire:
 
         * Skipping the processing of any pixel that would be black also had a
           large impact on speed (black_pixels).
+
+        * Continue is time-intensive.  Refactoring the code to remove it increased
+          the frame-rate.
     """
 
     def __init__(self):
@@ -188,12 +190,12 @@ class Fire:
         # Generate two rows of random data.
         random_bytes = self.generate_data()
 
-		# Make local copies to avoid the overhead of lookups.
+        # Make local copies to avoid the overhead of lookups.
         back_buf = self.back_buf
         window_w = self.window['w']
 
-		# The fire cuts out on its own due to the algorithm.  Only the bottom 50 or so
-		# rows need to be calculated.
+        # The fire cuts out on its own due to the algorithm.  Only the bottom 50 or so
+        # rows need to be calculated.
         for row in range(self.window['first_row'], self.window['h'] - 2):
             # The last two rows are calculated separately since they
             # have special processing due to the random data.
@@ -316,27 +318,26 @@ class Fire:
         # another difference between the original and this version.
         back_buf[0:self.end_to] = back_buf[self.start_from:self.end_from][::-1]
 
-		# Update the instance's back buffer.
+        # Update the instance's back buffer.
         self.back_buf = back_buf
 
-		# Make local copies to avoid the overhead of lookups.
+        # Make local copies to avoid the overhead of lookups.
         cur_palette = self.current_palette
         black_pixels = self.black_pixels[self.palette_flags['index']]
 
-		# Clear the display buffer by setting it to black.
+        # Clear the display buffer by setting it to black.
         display_buf = [0x00] * (self.window['size'] << 2)
 
         for index, value in enumerate(back_buf):
-            if value in black_pixels:
-                # The color is black so this does not need to be looked up and set.
-                continue
+            if value not in black_pixels:
+                # If the color is black it does not need to be looked up and set.
 
-            # Pre-calculate indexing variables.
-            quad = value << 2
-            idx = index << 2
+                # Pre-calculate indexing variables.
+                quad = value << 2
+                idx = index << 2
 
-            # Copy the RGBA values from the palette to the display buffer.
-            display_buf[idx:idx + 3] = cur_palette[quad:quad + 3]
+                # Copy the RGBA values from the palette to the display buffer.
+                display_buf[idx:idx + 3] = cur_palette[quad:quad + 3]
 
         return bytes(display_buf)
 
@@ -346,7 +347,7 @@ class Fire:
             an updated frame of the fire.
         """
 
-		# Generate the new frame.
+        # Generate the new frame.
         bitmap = self.make_frame()
 
         # Display the new frame.
@@ -434,7 +435,7 @@ class Fire:
         glut.glutKeyboardFunc(self.kb_input)
         self.fps['start_time'] = perf_counter()
 
-		# Flip the image upsid-right.
+        # Flip the image upsid-right.
         gl.glLoadIdentity()
         gl.glRasterPos2f(-1,1)
         gl.glPixelZoom(1, -1)
@@ -445,3 +446,5 @@ class Fire:
 if __name__ == "__main__":
     fire = Fire()
     fire.main()
+
+    print("Ending")
