@@ -279,10 +279,6 @@ class Fire:
 
         back_buf[from_index - 1] = value
 
-        # The next row is pre-calculated to save processing.
-        from_index = (self.window['h'] - 1) * window_w
-        to_index = from_index - window_w
-
         for col in range(1, window_w - 1):
             value = (
                 + random_bytes[col - 1]
