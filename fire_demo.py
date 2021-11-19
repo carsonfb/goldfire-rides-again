@@ -212,34 +212,28 @@ class Fire:
                 # to save processing.
                 col_index = from_index + col
 
-                value = (
+                back_buf[to_index + col] = (
                     back_buf[col_index - 1]
                     + back_buf[col_index + 1]
                     + back_buf[col_index]
                     + back_buf[col_index + window_w]
                 ) >> 2
 
-                back_buf[to_index + col] = value
-
             # Process the first column.
-            value = (
+            back_buf[to_index] = (
                 back_buf[from_index - 1]
                 + back_buf[from_index + 1]
                 + back_buf[from_index]
                 + back_buf[from_index + window_w]
             ) >> 2
 
-            back_buf[to_index] = value
-
             # Process the last column.
-            value = (
+            back_buf[from_index - 1] = (
                 back_buf[from_index + window_w - 2]
                 + back_buf[from_index]
                 + back_buf[from_index + window_w - 1]
                 + back_buf[from_index + window_w + window_w - 1]
             ) >> 2
-
-            back_buf[from_index - 1] = value
 
         # The next row is pre-calculated to save processing.
         from_index = (self.window['h'] - 1) * window_w
@@ -250,64 +244,52 @@ class Fire:
             # to save processing.
             col_index = from_index + col
 
-            value = (
+            back_buf[from_index - window_w + col] = (
                 back_buf[col_index - 1]
                 + back_buf[col_index + 1]
                 + back_buf[col_index]
                 + random_bytes[col]
             ) >> 2
 
-            back_buf[from_index - window_w + col] = value
-
         # Process the first column.
-        value = (
+        back_buf[to_index] = (
             back_buf[from_index + window_w - 1]
             + back_buf[from_index + 1]
             + back_buf[from_index]
             + random_bytes[0]
         ) >> 2
 
-        back_buf[to_index] = value
-
         # Process the last column.
-        value = (
+        back_buf[from_index - 1] = (
             back_buf[from_index + window_w - 2]
             + back_buf[from_index]
             + back_buf[from_index + window_w - 1]
             + random_bytes[window_w - 1]
         ) >> 2
 
-        back_buf[from_index - 1] = value
-
         for col in range(1, window_w - 1):
-            value = (
+            back_buf[to_index + col] = (
                 + random_bytes[col - 1]
                 + random_bytes[col + 1]
                 + random_bytes[col]
                 + random_bytes[window_w + col]
             ) >> 2
 
-            back_buf[to_index + col] = value
-
         # Process the first column.
-        value = (
+        back_buf[to_index] = (
             random_bytes[window_w - 1]
             + random_bytes[window_w + 1]
             + random_bytes[0]
             + random_bytes[window_w]
         ) >> 2
 
-        back_buf[to_index] = value
-
         # Process the last column.
-        value = (
+        back_buf[from_index - 1] = (
             random_bytes[window_w - 2]
             + random_bytes[window_w]
             + random_bytes[window_w - 1]
             + random_bytes[(window_w << 1) - 1]
         ) >> 2
-
-        back_buf[from_index - 1] = value
 
         # Copy the bottom values to the top.  This is reversed from left-to-right but
         # Not reversing it requires a loop and was a performance hit.  This will just be
