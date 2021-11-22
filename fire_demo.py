@@ -333,8 +333,7 @@ class Fire:
                     idx2 = (start_from + index) << 2
 
                     # Copy the RGBA values from the palette to the display buffer.
-                    display_buf[idx:idx + 3] = cur_palette[quad:quad + 3]
-                    display_buf[idx2:idx2 + 3] = cur_palette[quad:quad + 3]
+                    display_buf[idx:idx + 3] = display_buf[idx2:idx2 + 3] = cur_palette[quad:quad + 3]
 
         return bytes(display_buf)
 
