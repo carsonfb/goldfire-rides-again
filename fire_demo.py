@@ -31,8 +31,12 @@ class Fire:
 
         Speed Notes (see the git history for more details on some of the changes):
 
-        * In testing x << 1 and x << 2 was slightly faster than * 2 and * 4 respectively.
-          This doesn't matter very much on each frame, but adds up over time.
+        * In testing x << 2 was slightly faster than x * 4.  This doesn't matter very
+          much on each frame, but adds up over time.
+
+        * In testing, x + x is faster than x << 1, but x + x + x + x is slower than
+          x << 2.  Though x + x is slower than x << 1 when the value has to be
+          looked up.
 
         * In testing x >> 1 and >> x 2 was significantly faster than int(x / 2) and
           int (x / 4) respectively.
@@ -73,11 +77,12 @@ class Fire:
         self.start_from = self.window['first_row'] * self.window['w']
         self.end_from = (self.window['h'] - 1) * self.window['w'] + self.window['w']
 
-        # Setup the palette index, grey flag, and the number of palettes.
+        # Setup the palette index, grey flag, the changed flag, and the number of palettes.
         self.palette_flags = {
             'index': 0,
             'grey': False,
-            'total': 0
+            'total': 0,
+            'changed': True
         }
 
         # Initialize the palettes.
@@ -306,15 +311,40 @@ class Fire:
         # Clear the display buffer by setting it to black.
         display_buf = [0x00] * (self.window['size'] << 2)
 
-        for index, value in enumerate(back_buf):
-            if value not in black_pixels:
-                # If the color is black it does not need to be looked up and set.
+        if self.palette_flags['changed']:
+            # The palette changed, update the entire screen.
+            self.palette_flags['changed'] = False
 
-                # Pre-calculate indexing variables.
-                quad, idx = value << 2, index << 2
+            for index, value in enumerate(back_buf):
+                if value not in black_pixels:
+                    # If the color is black it does not need to be looked up and set.
 
-                # Copy the RGBA values from the palette to the display buffer.
-                display_buf[idx:idx + 3] = cur_palette[quad:quad + 3]
+                    # Pre-calculate indexing variables.
+                    quad, idx = value << 2, index << 2
+
+                    # Copy the RGBA values from the palette to the display buffer.
+                    display_buf[idx:idx + 3] = cur_palette[quad:quad + 3]
+        else:
+            # The palette did not change, do not update the text area.
+            for index, value in enumerate(back_buf[0:self.end_to]):
+                if value not in black_pixels:
+                    # If the color is black it does not need to be looked up and set.
+
+                    # Pre-calculate indexing variables.
+                    quad, idx = value << 2, index << 2
+
+                    # Copy the RGBA values from the palette to the display buffer.
+                    display_buf[idx:idx + 3] = cur_palette[quad:quad + 3]
+
+            for index, value in enumerate(back_buf[self.start_from:self.end_from]):
+                if value not in black_pixels:
+                    # If the color is black it does not need to be looked up and set.
+
+                    # Pre-calculate indexing variables.
+                    quad, idx = value << 2, (index + self.start_from) << 2
+
+                    # Copy the RGBA values from the palette to the display buffer.
+                    display_buf[idx:idx + 3] = cur_palette[quad:quad + 3]
 
         return bytes(display_buf)
 
@@ -354,6 +384,8 @@ class Fire:
             print (f"FPS: {fps}")
         elif key in [b"p", b"P"]:
             # If the user pressed p, cycle through the palettes.
+            self.palette_flags['changed'] = True
+
             if self.palette_flags['index'] == self.palette_flags['total'] - 1:
                 # If the last palette is already in use, go back to the default palette.
                 self.palette_flags['index'] = 0
@@ -368,6 +400,7 @@ class Fire:
         elif key in ([b"r", b"R"]):
             # If the user pressed r, select a random palette.
             self.palette_flags['index'] = random.randint(0, self.palette_flags['total'] - 1)
+            self.palette_flags['changed'] = True
 
             if self.palette_flags['grey']:
                 self.current_palette = self.greys[self.palette_flags['index']].copy()
@@ -376,11 +409,13 @@ class Fire:
         elif key in ([b"g", b"G"]):
             # If the user pressed g, change the palette to greyscale.
             self.palette_flags['grey'] = True
+            self.palette_flags['changed'] = True
 
             self.current_palette = self.greys[self.palette_flags['index']]
         elif key in ([b"c", b"C"]):
             # If the user pressed c, change the palette to color.
             self.palette_flags['grey'] = False
+            self.palette_flags['changed'] = True
 
             self.current_palette = self.palettes[self.palette_flags['index']]
 
