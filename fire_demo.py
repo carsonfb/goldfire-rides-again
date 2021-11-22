@@ -288,7 +288,7 @@ class Fire:
             random_bytes[window_w - 2]
             + random_bytes[window_w]
             + random_bytes[window_w - 1]
-            + random_bytes[(window_w << 1) - 1]
+            + random_bytes[(window_w + window_w) - 1]
         ) >> 2
 
         # Copy the bottom values to the top.  This is reversed from left-to-right but
