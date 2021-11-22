@@ -311,8 +311,7 @@ class Fire:
                 # If the color is black it does not need to be looked up and set.
 
                 # Pre-calculate indexing variables.
-                quad = value << 2
-                idx = index << 2
+                quad, idx = value << 2, index << 2
 
                 # Copy the RGBA values from the palette to the display buffer.
                 display_buf[idx:idx + 3] = cur_palette[quad:quad + 3]
