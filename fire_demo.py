@@ -73,7 +73,6 @@ class Fire:
 
         self.window['size'] = self.window['w'] * self.window['h']
 
-        self.end_to = (self.window['h'] - self.window['first_row']) * self.window['w']
         self.start_from = self.window['first_row'] * self.window['w']
         self.end_from = (self.window['h'] - 1) * self.window['w'] + self.window['w']
 
@@ -310,30 +309,20 @@ class Fire:
         display_buf = [0x00] * (self.window['size'] << 2)
 
         if self.palette_flags['changed']:
-            # The palette changed, update the entire screen.
-            self.palette_flags['changed'] = False
+            # The palette changed, update the text area.
+            # TODO: This is a placeholder for now.
+            pass
 
-            for index, value in enumerate(back_buf):
-                if value not in black_pixels:
-                    # If the color is black it does not need to be looked up and set.
-
-                    # Pre-calculate indexing variables.
-                    quad, idx = value << 2, index << 2
-
-                    # Copy the RGBA values from the palette to the display buffer.
-                    display_buf[idx:idx + 3] = cur_palette[quad:quad + 3]
-        else:
+        for index, value in enumerate(back_buf[start_from:end_from]):
             # The palette did not change, do not update the text area.
-            for index, value in enumerate(back_buf[start_from:end_from]):
-                if value not in black_pixels:
-                    # If the color is black it does not need to be looked up and set.
+            if value not in black_pixels:
+                # If the color is black it does not need to be looked up and set.
 
-                    # Pre-calculate indexing variables.
-                    quad, idx = value << 2, (first_row - index) << 2
-                    idx2 = (start_from + index) << 2
+                # Pre-calculate indexing variables.
+                quad, idx, idx2 = value << 2, (first_row - index) << 2, (start_from + index) << 2
 
-                    # Copy the RGBA values from the palette to the display buffer.
-                    display_buf[idx:idx + 3] = display_buf[idx2:idx2 + 3] = cur_palette[quad:quad + 3]
+                # Copy the RGBA values from the palette to the display buffer.
+                display_buf[idx:idx + 3] = display_buf[idx2:idx2 + 3] = cur_palette[quad:quad + 3]
 
         return bytes(display_buf)
 
