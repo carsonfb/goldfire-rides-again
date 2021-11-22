@@ -81,8 +81,8 @@ class Fire:
         self.palette_flags = {
             'index': 0,
             'grey': False,
+            'changed': True,
             'total': 0,
-            'changed': True
         }
 
         # Initialize the palettes.
@@ -296,17 +296,15 @@ class Fire:
             + random_bytes[(window_w + window_w) - 1]
         ) >> 2
 
-        # Copy the bottom values to the top.  This is reversed from left-to-right but
-        # Not reversing it requires a loop and was a performance hit.  This will just be
-        # another difference between the original and this version.
-        back_buf[0:self.end_to] = back_buf[self.start_from:self.end_from][::-1]
-
         # Update the instance's back buffer.
         self.back_buf = back_buf
 
         # Make local copies to avoid the overhead of lookups.
         cur_palette = self.current_palette
         black_pixels = self.black_pixels[self.palette_flags['index']]
+        start_from = self.start_from
+        end_from = self.end_from
+        first_row = self.window['h'] - self.start_from
 
         # Clear the display buffer by setting it to black.
         display_buf = [0x00] * (self.window['size'] << 2)
@@ -326,25 +324,17 @@ class Fire:
                     display_buf[idx:idx + 3] = cur_palette[quad:quad + 3]
         else:
             # The palette did not change, do not update the text area.
-            for index, value in enumerate(back_buf[0:self.end_to]):
+            for index, value in enumerate(back_buf[start_from:end_from]):
                 if value not in black_pixels:
                     # If the color is black it does not need to be looked up and set.
 
                     # Pre-calculate indexing variables.
-                    quad, idx = value << 2, index << 2
+                    quad, idx = value << 2, (first_row - index) << 2
+                    idx2 = (start_from + index) << 2
 
                     # Copy the RGBA values from the palette to the display buffer.
                     display_buf[idx:idx + 3] = cur_palette[quad:quad + 3]
-
-            for index, value in enumerate(back_buf[self.start_from:self.end_from]):
-                if value not in black_pixels:
-                    # If the color is black it does not need to be looked up and set.
-
-                    # Pre-calculate indexing variables.
-                    quad, idx = value << 2, (index + self.start_from) << 2
-
-                    # Copy the RGBA values from the palette to the display buffer.
-                    display_buf[idx:idx + 3] = cur_palette[quad:quad + 3]
+                    display_buf[idx2:idx2 + 3] = cur_palette[quad:quad + 3]
 
         return bytes(display_buf)
 
