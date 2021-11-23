@@ -85,7 +85,7 @@ class Fire:
         }
 
         # Initialize the palettes.
-        self.palettes, self.greys, self.black_pixels = self.read_palettes()
+        self.palettes, self.greys, self.black_pixels = read_palettes()
         self.palette_flags['total'] = len(self.palettes)
 
         # Copy the default palette into the current palette.
@@ -94,80 +94,6 @@ class Fire:
         # Initialize the back buffer. The back buffer only has
         # the palette lookup value, so it is only a 1/4 of the size.
         self.back_buf = [0x00] * self.window['size']
-
-    def read_palettes(self):
-        """
-            This method reads the palettes from the palettes folder on disk.  Users can supply
-            their own palettes and they will be automatically loaded.  The default palette will
-            be loaded as the first in the list.
-        """
-
-        # Initialize the palette structure and leave a placeholder for the default palette.
-        palettes = []
-        palettes.append([])
-
-        greys = []
-        greys.append([])
-
-        black_pixels = []
-        black_pixels.append([])
-
-        # Find all of the palette files in the palettes folder.
-        files = glob.glob(r"palettes\*.bin")
-
-        for file in files:
-            if os.path.getsize(file) != 768:
-                # Skip the palette file if it is the wrong size.
-                continue
-
-            if "default.bin" in file:
-                # Set the default palette to the first palette entry.
-                palettes[0], greys[0], black_pixels[0] = Fire.make_palette(file)
-            else:
-                # Appened palettes other than the default to the list.
-                pal, grey, black = Fire.make_palette(file)
-
-                palettes.append(pal)
-                greys.append(grey)
-                black_pixels.append(black)
-
-        return palettes, greys, black_pixels
-
-    @classmethod
-    def make_palette(cls, file):
-        """ This method loads a palette file and appends the alpha value. """
-
-        # Initialize the palette structure.
-        palette = []
-        greys = []
-        black_pixels = set()
-
-        with open(file, "rb") as palette_fh:
-            # Read in all of the color entries.
-            for index in range(0, 256):
-                # Read the red, green, and blue values for the color.
-                red, green, blue = palette_fh.read(3)
-
-                total = red + green + blue
-                grey = total // 3
-
-                if total == 0:
-                    # If the color is black, add it to the list.
-                    black_pixels.add(index)
-
-                # Store the red, green, and blue values as well as the alpha value.
-                palette.extend([red, green, blue, 0xFF])
-                greys.extend([grey, grey, grey, 0xFF])
-
-        return palette, greys, black_pixels
-
-    def generate_data(self):
-        """
-            This method generates two rows of values at either the min or max value
-            of the palette. These are used in the averaging algorithm.
-        """
-
-        return random.choices([0, 255], weights=[3, 1], k=self.window['w'] << 1)
 
     def make_frame(self):
         """
@@ -191,12 +117,12 @@ class Fire:
             This is a slight departure from the method used in the original GoldFire.
         """
 
-        # Generate two rows of random data.
-        random_bytes = self.generate_data()
-
         # Make local copies to avoid the overhead of lookups.
         back_buf = self.back_buf
         window_w = self.window['w']
+
+        # Generate two rows of random data.
+        random_bytes = generate_data(window_w)
 
         # The fire cuts out on its own due to the algorithm.  Only the bottom 50 or so
         # rows need to be calculated.
@@ -434,6 +360,79 @@ class Fire:
 
         # Start the main program loop.
         glut.glutMainLoop()
+
+def read_palettes():
+    """
+        This function reads the palettes from the palettes folder on disk.  Users can supply
+        their own palettes and they will be automatically loaded.  The default palette will
+        be loaded as the first in the list.
+    """
+
+    # Initialize the palette structure and leave a placeholder for the default palette.
+    palettes = []
+    palettes.append([])
+
+    greys = []
+    greys.append([])
+
+    black_pixels = []
+    black_pixels.append([])
+
+    # Find all of the palette files in the palettes folder.
+    files = glob.glob(r"palettes\*.bin")
+
+    for file in files:
+        if os.path.getsize(file) != 768:
+            # Skip the palette file if it is the wrong size.
+            continue
+
+        if "default.bin" in file:
+            # Set the default palette to the first palette entry.
+            palettes[0], greys[0], black_pixels[0] = make_palette(file)
+        else:
+            # Appened palettes other than the default to the list.
+            pal, grey, black = make_palette(file)
+
+            palettes.append(pal)
+            greys.append(grey)
+            black_pixels.append(black)
+
+    return palettes, greys, black_pixels
+
+def make_palette(file):
+    """ This function loads a palette file and appends the alpha value. """
+
+    # Initialize the palette structure.
+    palette = []
+    greys = []
+    black_pixels = set()
+
+    with open(file, "rb") as palette_fh:
+        # Read in all of the color entries.
+        for index in range(0, 256):
+            # Read the red, green, and blue values for the color.
+            red, green, blue = palette_fh.read(3)
+
+            total = red + green + blue
+            grey = total // 3
+
+            if not total:
+                # If the color is black, add it to the list.
+                black_pixels.add(index)
+
+            # Store the red, green, and blue values as well as the alpha value.
+            palette.extend([red, green, blue, 0xFF])
+            greys.extend([grey, grey, grey, 0xFF])
+
+    return palette, greys, black_pixels
+
+def generate_data(window_w):
+    """
+        This function generates two rows of values at either the min or max value
+        of the palette. These are used in the averaging algorithm.
+    """
+
+    return random.choices([0, 255], weights=[3, 1], k=window_w + window_w)
 
 if __name__ == "__main__":
     fire = Fire()
