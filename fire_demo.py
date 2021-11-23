@@ -149,9 +149,9 @@ class Fire:
                 red, green, blue = palette_fh.read(3)
 
                 total = red + green + blue
-                grey = int(total / 3)
+                grey = total // 3
 
-                if (total) == 0:
+                if total == 0:
                     # If the color is black, add it to the list.
                     black_pixels.add(index)
 
@@ -303,7 +303,7 @@ class Fire:
         black_pixels = self.black_pixels[self.palette_flags['index']]
         start_from = self.start_from
         end_from = self.end_from
-        first_row = self.window['h'] - self.start_from
+        first_row = self.window['h'] - start_from
 
         # Clear the display buffer by setting it to black.
         display_buf = [0x00] * (self.window['size'] << 2)
@@ -314,7 +314,9 @@ class Fire:
             pass
 
         for index, value in enumerate(back_buf[start_from:end_from]):
-            # The palette did not change, do not update the text area.
+            # The palette did not change, do not update the text area.  Also, only
+            # perform half of the loops since the top and bottom do not need to be
+            # looked up and calculated separately.
             if value not in black_pixels:
                 # If the color is black it does not need to be looked up and set.
 
