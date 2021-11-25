@@ -54,6 +54,9 @@ class Fire:
           surprised me as I would not have expected a dictionary lookup to be that much
           faster than and addition and a bit shift.  This could not be fully cached due
           to memory constraints and time constraints of building the cache.
+
+        * Changing from RGBA to RGB yielded a speed increase with no loss since the alpha
+          channel was not being used.
     """
 
     def __init__(self):
@@ -211,7 +214,7 @@ class Fire:
         first_row = self.window['h'] - start_from
 
         # Clear the display buffer by setting it to black.
-        display_buf = [0x00] * (self.window['size'] << 2)
+        display_buf = [0x00] * (self.window['size'] * 3)
 
         if self.palette_flags['changed']:
             # The palette changed, update the text area.
@@ -226,10 +229,10 @@ class Fire:
                 # If the color is black it does not need to be looked up and set.
 
                 # Pre-calculate indexing variables.
-                quad, idx, idx2 = value << 2, (first_row - index) << 2, (start_from + index) << 2
+                quad, idx, idx2 = value * 3, (first_row - index) * 3, (start_from + index) * 3
 
                 # Copy the RGBA values from the palette to the display buffer.
-                display_buf[idx:idx + 3] = display_buf[idx2:idx2 + 3] = cur_palette[quad:quad + 3]
+                display_buf[idx:idx + 2] = display_buf[idx2:idx2 + 2] = cur_palette[quad:quad + 2]
 
         return bytes(display_buf)
 
@@ -243,7 +246,7 @@ class Fire:
         bitmap = self.make_frame()
 
         # Display the new frame.
-        gl.glDrawPixels(self.window['w'], self.window['h'], gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, bitmap)
+        gl.glDrawPixels(self.window['w'], self.window['h'], gl.GL_RGB, gl.GL_UNSIGNED_BYTE, bitmap)
         glut.glutSwapBuffers()
 
         # Increment the number of frames for the purpose of calculating the FPS.
@@ -321,7 +324,7 @@ class Fire:
         center_y = int((screen_h - self.window['h']) >> 1)
 
         # Create the OpenGL window and display it.
-        glut.glutInitDisplayMode(glut.GLUT_RGBA)
+        glut.glutInitDisplayMode(glut.GLUT_RGB)
         glut.glutInitWindowSize(self.window['w'], self.window['h'])
         glut.glutInitWindowPosition(center_x, center_y)
         self.window['handle']= glut.glutCreateWindow("GoldFire Rides Again")
@@ -400,8 +403,8 @@ def make_palette(file):
                 black_pixels.add(index)
 
             # Store the red, green, and blue values as well as the alpha value.
-            palette.extend([red, green, blue, 0xFF])
-            greys.extend([grey, grey, grey, 0xFF])
+            palette.extend([red, green, blue])
+            greys.extend([grey, grey, grey])
 
     return palette, greys, black_pixels
 
@@ -437,5 +440,3 @@ def generate_data(window_w):
 if __name__ == "__main__":
     fire = Fire()
     fire.main()
-
-    print("Ending")
