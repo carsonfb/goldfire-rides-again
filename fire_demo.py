@@ -32,14 +32,11 @@ class Fire:
         Speed Notes (see the git history for more details on some of the changes):
 
         * In testing x << 2 was slightly faster than x * 4.  This doesn't matter very
-          much on each frame, but adds up over time.
+          much on each frame, but adds up over time.  This likely varies by system
+          architecture, but has been true on x86 architecture for a long time.
 
         * In testing, x + x is faster than x << 1, but x + x + x + x is slower than
-          x << 2.  Though x + x is slower than x << 1 when the value has to be
-          looked up.
-
-        * In testing x >> 1 and >> x 2 was significantly faster than int(x / 2) and
-          int (x / 4) respectively.
+          x << 2.  Though list[x] + list[x] is slower than x << 1.
 
         * Making local copies of frequently used variables rather than looking them
           up from self each time had an appreciable impact on speed.
@@ -52,6 +49,11 @@ class Fire:
 
         * Continue is time-intensive.  Refactoring the code to remove it increased
           the frame-rate.
+
+        * Partially caching the pixel calculations improved the speed by about 5%.  This
+          surprised me as I would not have expected a dictionary lookup to be that much
+          faster than and addition and a bit shift.  This could not be fully cached due
+          to memory constraints and time constraints of building the cache.
     """
 
     def __init__(self):
@@ -95,6 +97,8 @@ class Fire:
         # the palette lookup value, so it is only a 1/4 of the size.
         self.back_buf = [0x00] * self.window['size']
 
+        self.cached = create_cache()
+
     def make_frame(self):
         """
             This method creates the bitmap for the frame.  The algorithm is below:
@@ -124,6 +128,8 @@ class Fire:
         # Generate two rows of random data.
         random_bytes = generate_data(window_w)
 
+        cached = self.cached
+
         # The fire cuts out on its own due to the algorithm.  Only the bottom 50 or so
         # rows need to be calculated.
         for row in range(self.window['first_row'], self.window['h'] - 2):
@@ -142,28 +148,19 @@ class Fire:
                 # to save processing.
                 col_index = from_index + col
 
-                back_buf[to_index + col] = (
-                    back_buf[col_index - 1]
-                    + back_buf[col_index + 1]
-                    + back_buf[col_index]
-                    + back_buf[col_index + window_w]
-                ) >> 2
+                back_buf[to_index + col] = \
+                    cached[back_buf[col_index - 1] + back_buf[col_index + 1]] \
+                        [back_buf[col_index] + back_buf[col_index + window_w]]
 
             # Process the first column.
-            back_buf[to_index] = (
-                back_buf[from_index - 1]
-                + back_buf[from_index + 1]
-                + back_buf[from_index]
-                + back_buf[from_index + window_w]
-            ) >> 2
+            back_buf[to_index] = \
+                cached[back_buf[from_index - 1] + back_buf[from_index + 1]] \
+                    [back_buf[from_index] + back_buf[from_index + window_w]]
 
             # Process the last column.
-            back_buf[from_index - 1] = (
-                back_buf[from_index + window_w - 2]
-                + back_buf[from_index]
-                + back_buf[from_index + window_w - 1]
-                + back_buf[from_index + window_w + window_w - 1]
-            ) >> 2
+            back_buf[from_index - 1] = \
+                cached[back_buf[from_index + window_w - 2] + back_buf[from_index]] \
+                    [back_buf[from_index + window_w - 1] + back_buf[from_index + window_w + window_w - 1]]
 
         # The next row is pre-calculated to save processing.
         from_index = (self.window['h'] - 1) * window_w
@@ -174,52 +171,34 @@ class Fire:
             # to save processing.
             col_index = from_index + col
 
-            back_buf[from_index - window_w + col] = (
-                back_buf[col_index - 1]
-                + back_buf[col_index + 1]
-                + back_buf[col_index]
-                + random_bytes[col]
-            ) >> 2
+            back_buf[from_index - window_w + col] = \
+                cached[back_buf[col_index - 1] + back_buf[col_index + 1]] \
+                    [back_buf[col_index] + random_bytes[col]]
 
         # Process the first column.
-        back_buf[to_index] = (
-            back_buf[from_index + window_w - 1]
-            + back_buf[from_index + 1]
-            + back_buf[from_index]
-            + random_bytes[0]
-        ) >> 2
+        back_buf[to_index] = \
+            cached[back_buf[from_index + window_w - 1] + back_buf[from_index + 1]] \
+                [back_buf[from_index] + random_bytes[0]]
 
         # Process the last column.
-        back_buf[from_index - 1] = (
-            back_buf[from_index + window_w - 2]
-            + back_buf[from_index]
-            + back_buf[from_index + window_w - 1]
-            + random_bytes[window_w - 1]
-        ) >> 2
+        back_buf[from_index - 1] = \
+            cached[back_buf[from_index + window_w - 2] + back_buf[from_index]] \
+                [back_buf[from_index + window_w - 1] + random_bytes[window_w - 1]]
 
         for col in range(1, window_w - 1):
-            back_buf[to_index + col] = (
-                + random_bytes[col - 1]
-                + random_bytes[col + 1]
-                + random_bytes[col]
-                + random_bytes[window_w + col]
-            ) >> 2
+            back_buf[to_index + col] = \
+                cached[random_bytes[col - 1] + random_bytes[col + 1]]\
+                    [random_bytes[col] + random_bytes[window_w + col]]
 
         # Process the first column.
-        back_buf[to_index] = (
-            random_bytes[window_w - 1]
-            + random_bytes[window_w + 1]
-            + random_bytes[0]
-            + random_bytes[window_w]
-        ) >> 2
+        back_buf[to_index] = \
+            cached[random_bytes[window_w - 1] + random_bytes[window_w + 1]]\
+                [random_bytes[0] + random_bytes[window_w]]
 
         # Process the last column.
-        back_buf[from_index - 1] = (
-            random_bytes[window_w - 2]
-            + random_bytes[window_w]
-            + random_bytes[window_w - 1]
-            + random_bytes[(window_w + window_w) - 1]
-        ) >> 2
+        back_buf[from_index - 1] = \
+            cached[random_bytes[window_w - 2] + random_bytes[window_w]] \
+                [random_bytes[window_w - 1] + random_bytes[(window_w + window_w) - 1]]
 
         # Update the instance's back buffer.
         self.back_buf = back_buf
@@ -425,6 +404,27 @@ def make_palette(file):
             greys.extend([grey, grey, grey, 0xFF])
 
     return palette, greys, black_pixels
+
+def create_cache():
+    """
+        This function sets up a partial lookup table for the pixel calculations.
+        The full 256*256*256*256 table cannot be constructed due to memory
+        constraints as well as it taking much too long though the latter issue
+        could potentially be addressed by using a different data structure such
+        as a numpy array.  Instead the first two values of the original calculation
+        are added and the last two are added and then these are used to lookup the
+        pixel color.
+    """
+
+    cached = {}
+
+    for index in range(512):
+        cached[index] = {}
+
+        for index2 in range(512):
+            cached[index][index2] = (index + index2) >> 2
+
+    return cached
 
 def generate_data(window_w):
     """
