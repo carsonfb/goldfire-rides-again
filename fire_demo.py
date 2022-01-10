@@ -17,6 +17,7 @@ import glob
 import random
 import OpenGL.GL as gl
 import OpenGL.GLUT as glut
+import numpy as np
 
 class Fire:
     """
@@ -327,18 +328,20 @@ class Fire:
         glut.glutInitDisplayMode(glut.GLUT_RGB)
         glut.glutInitWindowSize(self.window['w'], self.window['h'])
         glut.glutInitWindowPosition(center_x, center_y)
-        self.window['handle']= glut.glutCreateWindow("GoldFire Rides Again")
+        self.window['handle'] = glut.glutCreateWindow("GoldFire Rides Again")
 
-        # Setup the callbacks for OpenGL as well as initialize the start time.
+        # Setup the callbacks for OpenGL.
         glut.glutDisplayFunc(self.display_frame)
         glut.glutIdleFunc(self.display_frame)
         glut.glutKeyboardFunc(self.kb_input)
-        self.fps['start_time'] = perf_counter()
 
-        # Flip the image upsid-right.
+        # Flip the image upside-right.
         gl.glLoadIdentity()
         gl.glRasterPos2f(-1,1)
         gl.glPixelZoom(1, -1)
+
+        # Initialize the timer for calculating the FPS.
+        self.fps['start_time'] = perf_counter()
 
         # Start the main program loop.
         glut.glutMainLoop()
@@ -417,6 +420,11 @@ def create_cache():
         as a numpy array.  Instead the first two values of the original calculation
         are added and the last two are added and then these are used to lookup the
         pixel color.
+
+        I am surprised that this yielded a speed increase since most of the math
+        still has to happen (requires two additions instead of 3 additions and a
+        bit shift).  I suppose a constant-time lookup is faster than an addition
+        and a bit shift.
     """
 
     cached = {}
@@ -435,7 +443,7 @@ def generate_data(window_w):
         of the palette. These are used in the averaging algorithm.
     """
 
-    return random.choices([0, 255], weights=[3, 1], k=window_w + window_w)
+    return np.random.choice([0, 255], size=window_w + window_w, p=[0.75, 0.25])
 
 if __name__ == "__main__":
     fire = Fire()
