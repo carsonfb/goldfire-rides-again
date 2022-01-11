@@ -50,7 +50,7 @@ class Fire:
         * Continue is time-intensive.  Refactoring the code to remove it increased
           the frame-rate.
 
-        * Partially caching the pixel calculations improved the speed by about 5%.  This
+        * Partially caching the pixel calculations improved the speed by about 70%.  This
           surprised me as I would not have expected a dictionary lookup to be that much
           faster than and addition and a bit shift.  This could not be fully cached due
           to memory constraints and time constraints of building the cache.
@@ -152,18 +152,18 @@ class Fire:
                 col_index = from_index + col
 
                 back_buf[to_index + col] = \
-                    cached[back_buf[col_index - 1] + back_buf[col_index + 1]] \
-                        [back_buf[col_index] + back_buf[col_index + window_w]]
+                    cached[back_buf[col_index - 1]][back_buf[col_index + 1]] + \
+                        cached[back_buf[col_index]] [back_buf[col_index + window_w]]
 
             # Process the first column.
             back_buf[to_index] = \
-                cached[back_buf[from_index - 1] + back_buf[from_index + 1]] \
-                    [back_buf[from_index] + back_buf[from_index + window_w]]
+                cached[back_buf[from_index - 1]][back_buf[from_index + 1]] + \
+                    cached[back_buf[from_index]][back_buf[from_index + window_w]]
 
             # Process the last column.
             back_buf[from_index - 1] = \
-                cached[back_buf[from_index + window_w - 2] + back_buf[from_index]] \
-                    [back_buf[from_index + window_w - 1] + back_buf[from_index + window_w + window_w - 1]]
+                cached[back_buf[from_index + window_w - 2]][back_buf[from_index]] + \
+                    cached[back_buf[from_index + window_w - 1]][back_buf[from_index + window_w + window_w - 1]]
 
         # The next row is pre-calculated to save processing.
         from_index = (self.window['h'] - 1) * window_w
@@ -175,33 +175,33 @@ class Fire:
             col_index = from_index + col
 
             back_buf[from_index - window_w + col] = \
-                cached[back_buf[col_index - 1] + back_buf[col_index + 1]] \
-                    [back_buf[col_index] + random_bytes[col]]
+                cached[back_buf[col_index - 1]][back_buf[col_index + 1]] + \
+                    cached[back_buf[col_index]][random_bytes[col]]
 
         # Process the first column.
         back_buf[to_index] = \
-            cached[back_buf[from_index + window_w - 1] + back_buf[from_index + 1]] \
-                [back_buf[from_index] + random_bytes[0]]
+            cached[back_buf[from_index + window_w - 1]][back_buf[from_index + 1]] + \
+                cached[back_buf[from_index]][random_bytes[0]]
 
         # Process the last column.
         back_buf[from_index - 1] = \
-            cached[back_buf[from_index + window_w - 2] + back_buf[from_index]] \
-                [back_buf[from_index + window_w - 1] + random_bytes[window_w - 1]]
+            cached[back_buf[from_index + window_w - 2]][back_buf[from_index]] + \
+                cached[back_buf[from_index + window_w - 1]][random_bytes[window_w - 1]]
 
         for col in range(1, window_w - 1):
             back_buf[to_index + col] = \
-                cached[random_bytes[col - 1] + random_bytes[col + 1]]\
-                    [random_bytes[col] + random_bytes[window_w + col]]
+                cached[random_bytes[col - 1]][random_bytes[col + 1]] + \
+                    cached[random_bytes[col]][random_bytes[window_w + col]]
 
         # Process the first column.
         back_buf[to_index] = \
-            cached[random_bytes[window_w - 1] + random_bytes[window_w + 1]]\
-                [random_bytes[0] + random_bytes[window_w]]
+            cached[random_bytes[window_w - 1]][random_bytes[window_w + 1]] + \
+                cached[random_bytes[0]][random_bytes[window_w]]
 
         # Process the last column.
         back_buf[from_index - 1] = \
-            cached[random_bytes[window_w - 2] + random_bytes[window_w]] \
-                [random_bytes[window_w - 1] + random_bytes[(window_w + window_w) - 1]]
+            cached[random_bytes[window_w - 2]][random_bytes[window_w]] + \
+                cached[random_bytes[window_w - 1]][random_bytes[(window_w + window_w) - 1]]
 
         # Update the instance's back buffer.
         self.back_buf = back_buf
@@ -424,14 +424,20 @@ def create_cache():
         still has to happen (requires two additions instead of 3 additions and a
         bit shift).  I suppose a constant-time lookup is faster than an addition
         and a bit shift.  Still, I wouldn't have expected a 70% increase in speed.
+
+        There is a slight loss of fidelity as int((a + b) // 4) + int((c + d) // 4)
+        could be a slightly lower value than int((a + b + c + d) // 4).  Ultimately,
+        due to how the palettes are setup, this likely will not change the color of
+        the pixel or, if it does, it will only change very slightly.  In practice, I
+        did not notice any differences.
     """
 
     cached = {}
 
-    for index in range(512):
+    for index in range(256):
         cached[index] = {}
 
-        for index2 in range(512):
+        for index2 in range(256):
             cached[index][index2] = (index + index2) >> 2
 
     return cached
