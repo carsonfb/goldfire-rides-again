@@ -14,7 +14,6 @@
 import os
 from time import perf_counter
 import glob
-import random
 import OpenGL.GL as gl
 import OpenGL.GLUT as glut
 import numpy as np
@@ -232,7 +231,7 @@ class Fire:
                 # Pre-calculate indexing variables.
                 quad, idx, idx2 = value * 3, (first_row - index) * 3, (start_from + index) * 3
 
-                # Copy the RGBA values from the palette to the display buffer.
+                # Copy the RGB values from the palette to the display buffer.
                 display_buf[idx:idx + 2] = display_buf[idx2:idx2 + 2] = cur_palette[quad:quad + 2]
 
         return bytes(display_buf)
@@ -424,7 +423,7 @@ def create_cache():
         I am surprised that this yielded a speed increase since most of the math
         still has to happen (requires two additions instead of 3 additions and a
         bit shift).  I suppose a constant-time lookup is faster than an addition
-        and a bit shift.
+        and a bit shift.  Still, I wouldn't have expected a 70% increase in speed.
     """
 
     cached = {}
