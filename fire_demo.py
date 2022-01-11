@@ -214,7 +214,7 @@ class Fire:
         first_row = self.window['h'] - start_from
 
         # Clear the display buffer by setting it to black.
-        display_buf = [0x00] * (self.window['size'] * 3)
+        display_buf = bytearray(self.window['size'] * 3)
 
         if self.palette_flags['changed']:
             # The palette changed, update the text area.
@@ -234,7 +234,7 @@ class Fire:
                 # Copy the RGB values from the palette to the display buffer.
                 display_buf[idx:idx + 2] = display_buf[idx2:idx2 + 2] = cur_palette[quad:quad + 2]
 
-        return bytes(display_buf)
+        return display_buf
 
     def display_frame(self):
         """
