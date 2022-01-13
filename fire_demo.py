@@ -14,6 +14,7 @@
 import os
 from time import perf_counter
 import glob
+import random
 import OpenGL.GL as gl
 import OpenGL.GLUT as glut
 import numpy as np
@@ -57,6 +58,13 @@ class Fire:
 
         * Changing from RGBA to RGB yielded a speed increase with no loss since the alpha
           channel was not being used.
+
+        * Changing the cache to a list of lists from a dict of dicts increases the speed
+          by about 20%.  It seems that, from what I've read, under the hood using a list
+          saves a lookup over using a dict (techincally two lookups since it is a list
+          of lists).  This speed up was counter-intuitive since lists are supposed to
+          be O(n) and dicts are supposed to be O(1).  However, if the list was large,
+          dicts may be faster.
     """
 
     def __init__(self):
@@ -70,8 +78,8 @@ class Fire:
         # Initialize the window handle, dimensions, first row of fire, and size.
         self.window = {
            'handle': None,
-           'w': 320, # 384
-           'h': 200, # 240
+           'w': 320, # 384,
+           'h': 200, # 240,
            'first_row': 145,
            'size': 0
         }
@@ -155,15 +163,18 @@ class Fire:
                     cached[back_buf[col_index - 1]][back_buf[col_index + 1]] + \
                         cached[back_buf[col_index]] [back_buf[col_index + window_w]]
 
+            # Pre-calculate a frequently used value.
+            from_window = from_index + window_w
+
             # Process the first column.
             back_buf[to_index] = \
                 cached[back_buf[from_index - 1]][back_buf[from_index + 1]] + \
-                    cached[back_buf[from_index]][back_buf[from_index + window_w]]
+                    cached[back_buf[from_index]][back_buf[from_window]]
 
             # Process the last column.
             back_buf[from_index - 1] = \
-                cached[back_buf[from_index + window_w - 2]][back_buf[from_index]] + \
-                    cached[back_buf[from_index + window_w - 1]][back_buf[from_index + window_w + window_w - 1]]
+                cached[back_buf[from_window - 2]][back_buf[from_index]] + \
+                    cached[back_buf[from_window - 1]][back_buf[from_window + window_w - 1]]
 
         # The next row is pre-calculated to save processing.
         from_index = (self.window['h'] - 1) * window_w
@@ -222,11 +233,10 @@ class Fire:
             pass
 
         for index, value in enumerate(back_buf[start_from:end_from]):
-            # The palette did not change, do not update the text area.  Also, only
-            # perform half of the loops since the top and bottom do not need to be
-            # looked up and calculated separately.
+            # Update only the fire area.  Also, only perform half of the loops since the top
+            # and bottom do not need to be looked up and calculated separately.
             if value not in black_pixels:
-                # If the color is black it does not need to be looked up and set.
+                # If the color is black, it does not need to be looked up and set.
 
                 # Pre-calculate indexing variables.
                 quad, idx, idx2 = value * 3, (first_row - index) * 3, (start_from + index) * 3
@@ -432,13 +442,13 @@ def create_cache():
         did not notice any differences.
     """
 
-    cached = {}
+    cached = []
 
     for index in range(256):
-        cached[index] = {}
+        cached.append([])
 
         for index2 in range(256):
-            cached[index][index2] = (index + index2) >> 2
+            cached[index].append((index + index2) >> 2)
 
     return cached
 
