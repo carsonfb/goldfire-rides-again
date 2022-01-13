@@ -458,7 +458,7 @@ def generate_data(window_w):
         of the palette. These are used in the averaging algorithm.
     """
 
-    return np.random.choice([0, 255], size=window_w + window_w, p=[0.75, 0.25])
+    return np.random.choice([0, 255], size=window_w + window_w, p=[0.66, 0.34])
 
 if __name__ == "__main__":
     fire = Fire()
