@@ -101,6 +101,8 @@ class Fire:
         self.palettes, self.greys, self.black_pixels = read_palettes()
         self.palette_flags['total'] = len(self.palettes)
 
+        self.logo = read_logo()
+
         # Copy the default palette into the current palette.
         self.current_palette = self.palettes[self.palette_flags['index']].copy()
 
@@ -133,13 +135,17 @@ class Fire:
         """
 
         # Make local copies to avoid the overhead of lookups.
+        cached = self.cached
         back_buf = self.back_buf
         window_w = self.window['w']
 
+        # Precalculate values.
+        win_w_min = window_w - 1
+        from_index = self.window['first_row'] * window_w
+        to_index = from_index - window_w
+
         # Generate two rows of random data.
         random_bytes = generate_data(window_w)
-
-        cached = self.cached
 
         # The fire cuts out on its own due to the algorithm.  Only the bottom 50 or so
         # rows need to be calculated.
@@ -148,16 +154,17 @@ class Fire:
             # have special processing due to the random data.
 
             # The next row is pre-calculated to save processing.
-            from_index = (row + 1) * window_w
-            to_index = from_index - window_w
+            from_index += window_w
+            to_index += window_w
+            col_index = from_index
 
-            for col in range(1, window_w - 1):
+            for col in range(1, win_w_min):
                 # Process all columns except for the first and last column.  Those are
                 # special cases.
 
                 # The pixel directly below the current one is pre-calculated
                 # to save processing.
-                col_index = from_index + col
+                col_index += 1
 
                 back_buf[to_index + col] = \
                     cached[back_buf[col_index - 1]][back_buf[col_index + 1]] + \
@@ -174,16 +181,17 @@ class Fire:
             # Process the last column.
             back_buf[from_index - 1] = \
                 cached[back_buf[from_window - 2]][back_buf[from_index]] + \
-                    cached[back_buf[from_window - 1]][back_buf[from_window + window_w - 1]]
+                    cached[back_buf[from_window - 1]][back_buf[from_window + win_w_min]]
 
         # The next row is pre-calculated to save processing.
         from_index = (self.window['h'] - 1) * window_w
         to_index = from_index - window_w
+        col_index = from_index
 
-        for col in range(1, window_w - 1):
+        for col in range(1, win_w_min):
             # The pixel directly below the current one is pre-calculated
             # to save processing.
-            col_index = from_index + col
+            col_index += 1
 
             back_buf[from_index - window_w + col] = \
                 cached[back_buf[col_index - 1]][back_buf[col_index + 1]] + \
@@ -191,28 +199,28 @@ class Fire:
 
         # Process the first column.
         back_buf[to_index] = \
-            cached[back_buf[from_index + window_w - 1]][back_buf[from_index + 1]] + \
+            cached[back_buf[from_index + win_w_min]][back_buf[from_index + 1]] + \
                 cached[back_buf[from_index]][random_bytes[0]]
 
         # Process the last column.
         back_buf[from_index - 1] = \
             cached[back_buf[from_index + window_w - 2]][back_buf[from_index]] + \
-                cached[back_buf[from_index + window_w - 1]][random_bytes[window_w - 1]]
+                cached[back_buf[from_index + win_w_min]][random_bytes[win_w_min]]
 
-        for col in range(1, window_w - 1):
+        for col in range(1, win_w_min):
             back_buf[to_index + col] = \
                 cached[random_bytes[col - 1]][random_bytes[col + 1]] + \
                     cached[random_bytes[col]][random_bytes[window_w + col]]
 
         # Process the first column.
         back_buf[to_index] = \
-            cached[random_bytes[window_w - 1]][random_bytes[window_w + 1]] + \
+            cached[random_bytes[win_w_min]][random_bytes[window_w + 1]] + \
                 cached[random_bytes[0]][random_bytes[window_w]]
 
         # Process the last column.
         back_buf[from_index - 1] = \
             cached[random_bytes[window_w - 2]][random_bytes[window_w]] + \
-                cached[random_bytes[window_w - 1]][random_bytes[(window_w + window_w) - 1]]
+                cached[random_bytes[win_w_min]][random_bytes[(window_w + window_w) - 1]]
 
         # Update the instance's back buffer.
         self.back_buf = back_buf
@@ -222,15 +230,37 @@ class Fire:
         black_pixels = self.black_pixels[self.palette_flags['index']]
         start_from = self.start_from
         end_from = self.end_from
-        first_row = self.window['h'] - start_from
+        first_row = (self.window['h'] - self.window['first_row']) * window_w
 
         # Clear the display buffer by setting it to black.
         display_buf = bytearray(self.window['size'] * 3)
 
         if self.palette_flags['changed']:
             # The palette changed, update the text area.
-            # TODO: This is a placeholder for now.
-            pass
+            logo = self.logo
+            logo_cols = len(logo) // 20
+            start_col = (window_w - logo_cols) // 2
+
+            print(f"Start Column: {start_col}")
+
+            start_row = self.window['h'] - self.window['first_row']
+            end_row = self.window['first_row']
+            diff = (end_row - start_row)
+
+            diff = ((diff - 20) >> 1)
+            start_row += diff
+            end_row = start_row + 20
+
+            print(f"Diff: {start_row} --> {end_row} --> {diff} --> {logo_cols} --> {start_col + logo_cols}")
+
+
+            for index in range(start_row, end_row):
+                for col in range(start_col, start_col + logo_cols):
+                    pal_index = (index - start_row) * logo_cols + col - start_col
+
+                    display_buf[index * window_w * 3 + col * 3:index * window_w * 3 + col * 3 + 2] = cur_palette[logo[pal_index]*3:logo[pal_index]*3 + 2]
+
+            #self.palette_flags['changed'] = False
 
         for index, value in enumerate(back_buf[start_from:end_from]):
             # Update only the fire area.  Also, only perform half of the loops since the top
@@ -392,6 +422,17 @@ def read_palettes():
             black_pixels.append(black)
 
     return palettes, greys, black_pixels
+
+def read_logo():
+    """
+        This function reads in the GoldFire logo bitmap that was created with
+        create_logo.py.
+    """
+
+    with open("data/goldfire.bin", "rb") as gf_file:
+        goldfire = gf_file.read()
+
+    return goldfire
 
 def make_palette(file):
     """ This function loads a palette file and appends the alpha value. """
