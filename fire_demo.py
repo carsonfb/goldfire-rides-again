@@ -241,7 +241,7 @@ class Fire:
             logo_cols = len(logo) // 20
             start_col = (window_w - logo_cols) // 2
 
-            print(f"Start Column: {start_col}")
+            #print(f"Start Column: {start_col}")
 
             start_row = self.window['h'] - self.window['first_row']
             end_row = self.window['first_row']
@@ -251,17 +251,27 @@ class Fire:
             start_row += diff
             end_row = start_row + 20
 
-            print(f"Diff: {start_row} --> {end_row} --> {diff} --> {logo_cols} --> {start_col + logo_cols}")
+            #print(f"Diff: {start_row} --> {end_row} --> {diff} --> {logo_cols} --> {start_col + logo_cols}")
 
+            pal_index = 0
 
             for index in range(start_row, end_row):
                 for col in range(start_col, start_col + logo_cols):
-                    pal_index = (index - start_row) * logo_cols + col - start_col
+                    #pal_index = (index - start_row) * logo_cols + col - start_col
 
-                    display_buf[index * window_w * 3 + col * 3:index * window_w * 3 + col * 3 + 2] = cur_palette[logo[pal_index]*3:logo[pal_index]*3 + 2]
+                    #print(f"ROW: {index}")
+                    #print(f"COLUMN: {col}")
+                    #print(f"PAL_INDEX: {pal_index}")
+                    #print(f"COLOR: {cur_palette[logo[pal_index] * 3:logo[pal_index] * 3 + 3]}")
+
+                    display_buf[index * window_w * 3 + col * 3:index * window_w * 3 + col * 3 + 3] \
+                        = cur_palette[logo[pal_index] * 3:logo[pal_index] * 3 + 3]
+
+                    pal_index += 1
 
             #self.palette_flags['changed'] = False
 
+        # TODO: Does this need to be end_from+1?
         for index, value in enumerate(back_buf[start_from:end_from]):
             # Update only the fire area.  Also, only perform half of the loops since the top
             # and bottom do not need to be looked up and calculated separately.
@@ -272,7 +282,7 @@ class Fire:
                 quad, idx, idx2 = value * 3, (first_row - index) * 3, (start_from + index) * 3
 
                 # Copy the RGB values from the palette to the display buffer.
-                display_buf[idx:idx + 2] = display_buf[idx2:idx2 + 2] = cur_palette[quad:quad + 2]
+                display_buf[idx:idx + 3] = display_buf[idx2:idx2 + 3] = cur_palette[quad:quad + 3]
 
         return display_buf
 
@@ -285,7 +295,16 @@ class Fire:
         # Generate the new frame.
         bitmap = self.make_frame()
 
+        #import png
+        #reader = png.Reader(filename="GOLDFIRE.PNG")
+        #image_data = reader.read()[2]
+
+        #image_bmp = np.vstack(map(np.uint8, image_data))
+
+        #gl.glDrawPixels(320, 200, gl.GL_RGB, gl.GL_UNSIGNED_BYTE, image_bmp)
+
         # Display the new frame.
+        gl.glEnable(gl.GL_FRAMEBUFFER_SRGB);
         gl.glDrawPixels(self.window['w'], self.window['h'], gl.GL_RGB, gl.GL_UNSIGNED_BYTE, bitmap)
         glut.glutSwapBuffers()
 
@@ -376,7 +395,7 @@ class Fire:
 
         # Flip the image upside-right.
         gl.glLoadIdentity()
-        gl.glRasterPos2f(-1,1)
+        gl.glRasterPos2f(-1, 1)
         gl.glPixelZoom(1, -1)
 
         # Initialize the timer for calculating the FPS.
@@ -499,7 +518,17 @@ def generate_data(window_w):
         of the palette. These are used in the averaging algorithm.
     """
 
+    #return np.random.choice([0, 128], size=window_w + window_w, p=[0.40, 0.60])
     return np.random.choice([0, 255], size=window_w + window_w, p=[0.66, 0.34])
+
+    #randoms = []
+
+    #random.seed()
+
+    #for index in range(0, window_w + window_w):
+    #    randoms.append(random.randint(0, 1) * 168)
+
+    #return(randoms)
 
 if __name__ == "__main__":
     fire = Fire()
