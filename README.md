@@ -38,7 +38,7 @@ Among other differences are:
 
 Notes
 -----
-On Windows, you may have to jump through a small hoop in order to get GoldFire to run.  This [YouTube video][https://www.youtube.com/watch?v=a4NVQC_2S2U] gives detailed instructions and is what I followed.
+On Windows, you may have to jump through a small hoop in order to get GoldFire to run.  This [YouTube video](https://www.youtube.com/watch?v=a4NVQC_2S2U) gives detailed instructions and is what I followed.
 
 Credits
 -------
