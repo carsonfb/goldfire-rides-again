@@ -251,19 +251,10 @@ class Fire:
             start_row += diff
             end_row = start_row + 20
 
-            #print(f"Diff: {start_row} --> {end_row} --> {diff} --> {logo_cols} --> {start_col + logo_cols}")
-
             pal_index = 0
 
             for index in range(start_row, end_row):
                 for col in range(start_col, start_col + logo_cols):
-                    #pal_index = (index - start_row) * logo_cols + col - start_col
-
-                    #print(f"ROW: {index}")
-                    #print(f"COLUMN: {col}")
-                    #print(f"PAL_INDEX: {pal_index}")
-                    #print(f"COLOR: {cur_palette[logo[pal_index] * 3:logo[pal_index] * 3 + 3]}")
-
                     display_buf[index * window_w * 3 + col * 3:index * window_w * 3 + col * 3 + 3] \
                         = cur_palette[logo[pal_index] * 3:logo[pal_index] * 3 + 3]
 
@@ -295,16 +286,7 @@ class Fire:
         # Generate the new frame.
         bitmap = self.make_frame()
 
-        #import png
-        #reader = png.Reader(filename="GOLDFIRE.PNG")
-        #image_data = reader.read()[2]
-
-        #image_bmp = np.vstack(map(np.uint8, image_data))
-
-        #gl.glDrawPixels(320, 200, gl.GL_RGB, gl.GL_UNSIGNED_BYTE, image_bmp)
-
         # Display the new frame.
-        gl.glEnable(gl.GL_FRAMEBUFFER_SRGB);
         gl.glDrawPixels(self.window['w'], self.window['h'], gl.GL_RGB, gl.GL_UNSIGNED_BYTE, bitmap)
         glut.glutSwapBuffers()
 
@@ -432,6 +414,8 @@ def read_palettes():
         if "default.bin" in file:
             # Set the default palette to the first palette entry.
             palettes[0], greys[0], black_pixels[0] = make_palette(file)
+            for index in range(129, 147):
+                print(f"Color #{index}: {palettes[0][index * 3]}, {palettes[0][index * 3 + 1]}, {palettes[0][index * 3 + 2]}")
         else:
             # Appened palettes other than the default to the list.
             pal, grey, black = make_palette(file)
@@ -466,6 +450,22 @@ def make_palette(file):
         for index in range(0, 256):
             # Read the red, green, and blue values for the color.
             red, green, blue = palette_fh.read(3)
+
+            # The colors were extremely dark and needed to be scaled.  I'm not sure why though as
+            # the palette files are the same ones that the original version from the 1990s was
+            # using.  This is very close to the original colors after the faked "gamma" correction.
+            red *= 3
+            green *= 3
+            blue *= 3
+
+            # Prevent overflows.
+            if red > 255:
+                red = 255
+            if green > 255:
+                green = 255
+            if blue > 255:
+                blue = 255
+
 
             total = red + green + blue
             grey = total // 3
@@ -518,17 +518,8 @@ def generate_data(window_w):
         of the palette. These are used in the averaging algorithm.
     """
 
-    #return np.random.choice([0, 128], size=window_w + window_w, p=[0.40, 0.60])
-    return np.random.choice([0, 255], size=window_w + window_w, p=[0.66, 0.34])
-
-    #randoms = []
-
-    #random.seed()
-
-    #for index in range(0, window_w + window_w):
-    #    randoms.append(random.randint(0, 1) * 168)
-
-    #return(randoms)
+    return np.random.choice([0, 128], size=window_w + window_w, p=[0.43, 0.57])
+    #return np.random.choice([0, 255], size=window_w + window_w, p=[0.66, 0.34])
 
 if __name__ == "__main__":
     fire = Fire()
