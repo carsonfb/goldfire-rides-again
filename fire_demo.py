@@ -377,7 +377,9 @@ class Fire:
             else:
                 # Go to the next palette.
                 self.palette_flags['index'] += 1
-                self.set_palettes()
+
+            self.set_palettes()
+
         elif key in ([b'r', b'R']):
             # If the user pressed r, select a random palette.
             self.palette_flags['index'] = random.randint(0, self.palette_flags['total'] - 1)
