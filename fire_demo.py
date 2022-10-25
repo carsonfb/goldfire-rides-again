@@ -15,9 +15,9 @@ import os
 from time import perf_counter
 import glob
 import random
+import numpy as np
 import OpenGL.GL as gl
 import OpenGL.GLUT as glut
-import numpy as np
 
 class Fire:
     """
@@ -77,11 +77,11 @@ class Fire:
 
         # Initialize the window handle, dimensions, first row of fire, and size.
         self.window = {
-           'handle': None,
-           'w': 320, # 384,
-           'h': 200, # 240,
-           'first_row': 145,
-           'size': 0
+            'handle': None,
+            'w': 320, # 384,
+            'h': 200, # 240,
+            'first_row': 145,
+            'size': 0
         }
 
         self.window['size'] = self.window['w'] * self.window['h']
@@ -93,6 +93,8 @@ class Fire:
         self.palette_flags = {
             'index': 0,
             'grey': False,
+            'fire_grey': False,
+            'words_grey': False,
             'changed': True,
             'total': 0,
         }
@@ -101,10 +103,12 @@ class Fire:
         self.palettes, self.greys, self.black_pixels = read_palettes()
         self.palette_flags['total'] = len(self.palettes)
 
-        self.logo = read_logo()
+        # Store the logo information.
+        self.logo = self.pre_process_logo()
 
         # Copy the default palette into the current palette.
-        self.current_palette = self.palettes[self.palette_flags['index']].copy()
+        self.current_words_palette = self.palettes[self.palette_flags['index']].copy()
+        self.current_fire_palette = self.palettes[self.palette_flags['index']].copy()
 
         # Initialize the back buffer. The back buffer only has
         # the palette lookup value, so it is only a 1/4 of the size.
@@ -149,7 +153,7 @@ class Fire:
 
         # The fire cuts out on its own due to the algorithm.  Only the bottom 50 or so
         # rows need to be calculated.
-        for row in range(self.window['first_row'], self.window['h'] - 2):
+        for _ in range(self.window['first_row'], self.window['h'] - 2):
             # The last two rows are calculated separately since they
             # have special processing due to the random data.
 
@@ -168,7 +172,7 @@ class Fire:
 
                 back_buf[to_index + col] = \
                     cached[back_buf[col_index - 1]][back_buf[col_index + 1]] + \
-                        cached[back_buf[col_index]] [back_buf[col_index + window_w]]
+                        cached[back_buf[col_index]][back_buf[col_index + window_w]]
 
             # Pre-calculate a frequently used value.
             from_window = from_index + window_w
@@ -226,7 +230,8 @@ class Fire:
         self.back_buf = back_buf
 
         # Make local copies to avoid the overhead of lookups.
-        cur_palette = self.current_palette
+        cur_words_palette = self.current_words_palette
+        cur_fire_palette = self.current_fire_palette
         black_pixels = self.black_pixels[self.palette_flags['index']]
         start_from = self.start_from
         end_from = self.end_from
@@ -237,32 +242,32 @@ class Fire:
 
         if self.palette_flags['changed']:
             # The palette changed, update the text area.
-            logo = self.logo
-            logo_cols = len(logo) // 20
-            start_col = (window_w - logo_cols) // 2
+            logo = self.logo['logo']
 
-            start_row = self.window['h'] - self.window['first_row']
-            end_row = self.window['first_row']
-            diff = (end_row - start_row)
-
-            diff = ((diff - 20) >> 1)
-            start_row += diff
-            end_row = start_row + 20
+            start_col = self.logo['start_col']
+            logo_cols = self.logo['logo_cols']
 
             pal_index = 0
 
-            for index in range(start_row, end_row):
+            for index in range(self.logo['start_row'], self.logo['end_row']):
+                calc_index = (index * window_w * 3)
+
                 for col in range(start_col, start_col + logo_cols):
-                    display_buf[index * window_w * 3 + col * 3:index * window_w * 3 + col * 3 + 3] \
-                        = cur_palette[logo[pal_index] * 3:logo[pal_index] * 3 + 3]
+                    # Precalculate values used more than once.
+                    calc_col = calc_index + col * 3
+                    calc_pal = logo[pal_index] * 3
+
+                    display_buf[calc_col:calc_col + 3] = cur_words_palette[calc_pal:calc_pal + 3]
 
                     pal_index += 1
 
+            # To not redraw the text each time would requre clearing only part of the buffer each
+            # time or setting it in the back buffer and copying it back over.  This will will need
+            # to be timed to see if it is faster or not.
             #self.palette_flags['changed'] = False
 
-        # TODO: Does this need to be end_from+1?
-        for index, value in enumerate(back_buf[start_from:end_from]):
-            # Update only the fire area.  Also, only perform half of the loops since the top
+        for index, value in enumerate(back_buf[start_from:end_from + 1]):
+            # Update only the fire area.  Only perform half of the loops since the top
             # and bottom do not need to be looked up and calculated separately.
             if value not in black_pixels:
                 # If the color is black, it does not need to be looked up and set.
@@ -271,7 +276,9 @@ class Fire:
                 quad, idx, idx2 = value * 3, (first_row - index) * 3, (start_from + index) * 3
 
                 # Copy the RGB values from the palette to the display buffer.
-                display_buf[idx:idx + 3] = display_buf[idx2:idx2 + 3] = cur_palette[quad:quad + 3]
+                display_buf[idx:idx + 3] \
+                    = display_buf[idx2:idx2 + 3] \
+                    = cur_fire_palette[quad:quad + 3]
 
         return display_buf
 
@@ -291,6 +298,57 @@ class Fire:
         # Increment the number of frames for the purpose of calculating the FPS.
         self.fps['frames'] += 1
 
+    def set_palettes(self):
+        """
+            This method is sets up the current palettes based on the greyscale flags.
+        """
+
+        if self.palette_flags['grey']:
+            self.current_words_palette = self.greys[self.palette_flags['index']].copy()
+            self.current_fire_palette = self.greys[self.palette_flags['index']].copy()
+        elif self.palette_flags['words_grey']:
+            self.current_words_palette = self.greys[self.palette_flags['index']].copy()
+            self.current_fire_palette = self.palettes[self.palette_flags['index']].copy()
+        elif self.palette_flags['fire_grey']:
+            self.current_words_palette = self.palettes[self.palette_flags['index']].copy()
+            self.current_fire_palette = self.greys[self.palette_flags['index']].copy()
+        else:
+            self.current_words_palette = self.palettes[self.palette_flags['index']].copy()
+            self.current_fire_palette = self.palettes[self.palette_flags['index']].copy()
+
+    def pre_process_logo(self):
+        """
+            This method creates the logo structure avoiding the need to recalculate the values
+            each time through the main loop.
+        """
+
+        logo = {
+            'logo': None,
+            'start_row': 0,
+            'end_row': 0,
+            'start_col': 0,
+        }
+
+        logo['logo'] = read_logo()
+
+        logo_cols = len(logo['logo']) // 20
+
+        logo['start_col'] = (self.window['w'] - logo_cols) // 2
+
+        start_row = self.window['h'] - self.window['first_row']
+        end_row = self.window['first_row']
+        diff = (end_row - start_row)
+
+        diff = ((diff - 20) >> 1)
+        start_row += diff
+        end_row = start_row + 20
+
+        logo['logo_cols'] = logo_cols
+        logo['start_row'] = start_row
+        logo['end_row'] = end_row
+
+        return logo
+
     def kb_input(self, key, _x_pos, _y_pos):
         """ This method handles keyboard input from the user. """
 
@@ -306,10 +364,10 @@ class Fire:
             glut.glutDestroyWindow(self.window['handle'])
 
             # Display the statistics to the user.
-            print (f"Frames: {self.fps['frames']}")
-            print (f"Seconds: {elapsed_time}")
-            print (f"FPS: {fps}")
-        elif key in [b"p", b"P"]:
+            print(f"Frames: {self.fps['frames']}")
+            print(f"Seconds: {elapsed_time}")
+            print(f"FPS: {fps}")
+        elif key in [b'p', b'P']:
             # If the user pressed p, cycle through the palettes.
             self.palette_flags['changed'] = True
 
@@ -319,32 +377,41 @@ class Fire:
             else:
                 # Go to the next palette.
                 self.palette_flags['index'] += 1
-
-            if self.palette_flags['grey']:
-                self.current_palette = self.greys[self.palette_flags['index']].copy()
-            else:
-                self.current_palette = self.palettes[self.palette_flags['index']].copy()
-        elif key in ([b"r", b"R"]):
+                self.set_palettes()
+        elif key in ([b'r', b'R']):
             # If the user pressed r, select a random palette.
             self.palette_flags['index'] = random.randint(0, self.palette_flags['total'] - 1)
             self.palette_flags['changed'] = True
-
-            if self.palette_flags['grey']:
-                self.current_palette = self.greys[self.palette_flags['index']].copy()
-            else:
-                self.current_palette = self.palettes[self.palette_flags['index']].copy()
-        elif key in ([b"g", b"G"]):
+            self.set_palettes()
+        elif key in ([b'g', b'G']):
             # If the user pressed g, change the palette to greyscale.
             self.palette_flags['grey'] = True
+            self.palette_flags['fire_grey'] = True
+            self.palette_flags['words_grey'] = True
             self.palette_flags['changed'] = True
 
-            self.current_palette = self.greys[self.palette_flags['index']]
-        elif key in ([b"c", b"C"]):
+            self.current_words_palette = self.greys[self.palette_flags['index']]
+            self.current_fire_palette = self.greys[self.palette_flags['index']]
+        elif key in ([b'c', b'C']):
             # If the user pressed c, change the palette to color.
             self.palette_flags['grey'] = False
+            self.palette_flags['fire_grey'] = False
+            self.palette_flags['words_grey'] = False
             self.palette_flags['changed'] = True
 
-            self.current_palette = self.palettes[self.palette_flags['index']]
+            self.current_words_palette = self.palettes[self.palette_flags['index']]
+            self.current_fire_palette = self.palettes[self.palette_flags['index']]
+        elif key in ([b'f', b'F']):
+            # If the user presses f, change the fire to greyscale.
+            self.palette_flags['fire_grey'] = True
+
+            self.current_words_palette = self.greys[self.palette_flags['index']]
+        elif key in ([b'w', b'W']):
+            # If the user presses w, change the fire to greyscale.
+            self.palette_flags['words_grey'] = True
+            self.palette_flags['changed'] = True
+
+            self.current_fire_palette = self.greys[self.palette_flags['index']]
 
     def main(self):
         """
@@ -462,7 +529,6 @@ def make_palette(file):
             if blue > 255:
                 blue = 255
 
-
             total = red + green + blue
             grey = total // 3
 
@@ -487,7 +553,7 @@ def create_cache():
         pixel color.
 
         I am surprised that this yielded a speed increase since most of the math
-        still has to happen (requires two additions instead of 3 additions and a
+        still has to happen (requires two additions instead of four additions and a
         bit shift).  I suppose a constant-time lookup is faster than an addition
         and a bit shift.  Still, I wouldn't have expected a 70% increase in speed.
 
@@ -515,8 +581,7 @@ def generate_data(window_w):
     """
 
     return np.random.choice([0, 128], size=window_w + window_w, p=[0.43, 0.57])
-    #return np.random.choice([0, 255], size=window_w + window_w, p=[0.66, 0.34])
 
 if __name__ == "__main__":
-    fire = Fire()
-    fire.main()
+    FIRE = Fire()
+    FIRE.main()
