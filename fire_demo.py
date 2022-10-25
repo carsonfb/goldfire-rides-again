@@ -241,8 +241,6 @@ class Fire:
             logo_cols = len(logo) // 20
             start_col = (window_w - logo_cols) // 2
 
-            #print(f"Start Column: {start_col}")
-
             start_row = self.window['h'] - self.window['first_row']
             end_row = self.window['first_row']
             diff = (end_row - start_row)
@@ -414,8 +412,6 @@ def read_palettes():
         if "default.bin" in file:
             # Set the default palette to the first palette entry.
             palettes[0], greys[0], black_pixels[0] = make_palette(file)
-            for index in range(129, 147):
-                print(f"Color #{index}: {palettes[0][index * 3]}, {palettes[0][index * 3 + 1]}, {palettes[0][index * 3 + 2]}")
         else:
             # Appened palettes other than the default to the list.
             pal, grey, black = make_palette(file)

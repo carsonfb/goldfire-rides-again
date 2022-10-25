@@ -269,17 +269,11 @@ rows = 0
 display = create_string()
 
 for bit in display:
-    print(bit, end="")
-
     index += 1
 
     if index == 18 * 8:
         index = 0
         rows += 1
-
-        print("")
-
-print("")
 
 with open("data/goldfire.bin", "wb") as gf_file:
     gf_file.write(bytes(display))
