@@ -116,6 +116,8 @@ class Fire:
 
         self.cached = create_cache()
 
+        self.display_word = False
+
     def make_frame(self):
         """
             This method creates the bitmap for the frame.  The algorithm is below:
@@ -226,9 +228,6 @@ class Fire:
             cached[random_bytes[window_w - 2]][random_bytes[window_w]] + \
                 cached[random_bytes[win_w_min]][random_bytes[(window_w + window_w) - 1]]
 
-        # Update the instance's back buffer.
-        self.back_buf = back_buf
-
         # Make local copies to avoid the overhead of lookups.
         cur_words_palette = self.current_words_palette
         cur_fire_palette = self.current_fire_palette
@@ -237,13 +236,37 @@ class Fire:
         end_from = self.end_from
         first_row = (self.window['h'] - self.window['first_row']) * window_w
 
+        logo = self.logo['logo']
+
+        if self.display_word:
+            # The palette changed, update the text area.
+            start_col = self.logo['start_col']
+            logo_cols = self.logo['logo_cols']
+
+            pal_index = 0
+
+            for index in range(self.logo['start_row'] + 87, self.logo['end_row'] + 87):
+                calc_index = (index * window_w)
+
+                for col in range(start_col, start_col + logo_cols):
+                    # Precalculate values used more than once.
+                    calc_col = calc_index + col
+                    calc_pal = logo[pal_index]
+
+                    back_buf[calc_col] = calc_pal
+
+                    pal_index += 1
+
+            self.display_word = False
+
+        # Update the instance's back buffer.
+        self.back_buf = back_buf
+
         # Clear the display buffer by setting it to black.
         display_buf = bytearray(self.window['size'] * 3)
 
         if self.palette_flags['changed']:
             # The palette changed, update the text area.
-            logo = self.logo['logo']
-
             start_col = self.logo['start_col']
             logo_cols = self.logo['logo_cols']
 
@@ -379,11 +402,11 @@ class Fire:
                 self.palette_flags['index'] += 1
 
             self.set_palettes()
-
         elif key in ([b'r', b'R']):
             # If the user pressed r, select a random palette.
             self.palette_flags['index'] = random.randint(0, self.palette_flags['total'] - 1)
             self.palette_flags['changed'] = True
+
             self.set_palettes()
         elif key in ([b'g', b'G']):
             # If the user pressed g, change the palette to greyscale.
@@ -414,6 +437,10 @@ class Fire:
             self.palette_flags['changed'] = True
 
             self.current_fire_palette = self.greys[self.palette_flags['index']]
+        elif key in ([b'a', b'A']):
+            # If the user presses a, display "GoldFire" in the fire area and process it.  This is
+            # command a becuase, in the original version, it displayed "ABRAXAS".
+            self.display_word = True
 
     def main(self):
         """

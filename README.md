@@ -21,17 +21,18 @@ Features
 - The ability to switch between color (C) and greyscale (G).
 - The ability to change only the words to grey (W).
 - The ability to change only the fire to grey (F).
+- The ability to display "GoldFire" in the fire and have it flame out.
 - The ability to quit (Q) (ESC).
 
 Differences from the original
 -----------------------------
 Not all of the commands of the original are supported yet.  Among those are:
-- Printing ABRAXAS in the fire and having it burn out (A)
 - Changing the aspect ratio (H)
 
 Among other differences are:
 - Only the program name is displayed in the text area.
 - The frames / second are displayed when the user quits instead of the credits.
+- In the original version, pressing "a" caused "ABRAXAS" to appear in the fire.  In the new version "GoldFire" appears in the fire.  ABRAXAS was my handle in the local demo scene.
 - The fire algorithm is slightly different
 - This version is slower since it is written in Python and OpenGL rather than x86 Assembler and direct hardware calls.  Although, the user-facing speed (e.g. frames per second) is actually higher.
 - This version is released under a Creative Commons license (see the License section below)
