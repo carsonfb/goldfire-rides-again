@@ -29,7 +29,7 @@ Differences from the original
 Not all of the commands of the original are supported yet.  Among those are:
 - Changing the aspect ratio (H)
 
-Among other differences are:
+Other differences are:
 - Only the program name is displayed in the text area.
 - The frames / second are displayed when the user quits instead of the credits.
 - In the original version, pressing "a" caused "ABRAXAS" to appear in the fire.  In the new version "GoldFire" appears in the fire.  ABRAXAS was my handle in the local demo scene.
