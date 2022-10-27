@@ -21,50 +21,51 @@ import OpenGL.GLUT as glut
 
 class Fire:
     """
-        This class creates a modified version of the old demo GoldFire.  The
-        fire routine calculations are slightly adjusted from the original, some
-        of the features have not been implemented yet (may never be), and the
-        original had fire at both the top and bottom of the screen.
+        This class creates a modified version of the demo GoldFire from the 1990s.  The fire
+        routine calculations are slightly adjusted from the original and one of the features of the
+        original version has not been implemented yet and may never be.
 
-        The palette file format from the original is supported and most of the
-        palettes from the original are included.  These are binary files
-        consisting of 256 triplets of red, green, and blue values.
+        The palette file format from the original is supported and most of the palettes from the
+        original are included.  A couple of the palettes that I was never quite happy with were
+        excluded.  In general, I either never got the color distribution quite right, or they were
+        very similar to other palettes.  These are binary files consisting of 256 triplets of red,
+        green, and blue values.
 
         Speed Notes (see the git history for more details on some of the changes):
 
-        * In testing x << 2 was slightly faster than x * 4.  This doesn't matter very
-          much on each frame, but adds up over time.  This likely varies by system
-          architecture, but has been true on x86 architecture for a long time.
+        * In testing x << 2 was slightly faster than x * 4.  This doesn't matter very much on each
+          frame, but adds up over time.  This likely varies by system architecture, but has been
+          true on x86 architecture for a long time.
 
-        * In testing, x + x is faster than x << 1, but x + x + x + x is slower than
-          x << 2.  Though list[x] + list[x] is slower than x << 1.
+        * In testing, x + x is faster than x << 1, but x + x + x + x is slower than x << 2.
+          Though list[x] + list[x] is slower than list[x] << 1.  This is likely due to accessing
+          the indexed value twice in the first case, though that's just a guess.
 
-        * Making local copies of frequently used variables rather than looking them
-          up from self each time had an appreciable impact on speed.
+        * Making local copies of frequently used variables rather than looking them up from self
+          each time had an appreciable impact on speed.
 
-        * Only processing lines that actually change before the fire tapers off
-          had a large impact on speed (first_row).
+        * Only processing lines that actually change before the fire tapers off had a large impact
+          on speed (first_row).
 
-        * Skipping the processing of any pixel that would be black also had a
-          large impact on speed (black_pixels).
+        * Skipping the processing of any pixel that would be black also had a large impact on
+          speed (black_pixels).
 
-        * Continue is time-intensive.  Refactoring the code to remove it increased
-          the frame-rate.
+        * Continue is time-intensive.  Refactoring the code to remove it increased the frame-rate.
 
         * Partially caching the pixel calculations improved the speed by about 70%.  This
-          surprised me as I would not have expected a dictionary lookup to be that much
-          faster than and addition and a bit shift.  This could not be fully cached due
-          to memory constraints and time constraints of building the cache.
+          surprised me as I would not have expected a dictionary lookup to be that much faster
+          than an addition and a bit shift.  This could not be fully cached due to memory
+          constraints and time constraints of building the cache.
 
-        * Changing from RGBA to RGB yielded a speed increase with no loss since the alpha
-          channel was not being used.
+        * Changing from RGBA to RGB yielded a speed increase with no loss since the alpha channel
+          was not being used.  I assume that nothing about RGB is inherently faster than RGBA and
+          that the entire speed increase was due to operating on 25% less data.
 
-        * Changing the cache to a list of lists from a dict of dicts increases the speed
-          by about 20%.  It seems that, from what I've read, under the hood using a list
-          saves a lookup over using a dict (techincally two lookups since it is a list
-          of lists).  This speed up was counter-intuitive since lists are supposed to
-          be O(n) and dicts are supposed to be O(1).  However, if the list was large,
-          dicts may be faster.
+        * Changing the cache to a list of lists from a dict of dicts increases the speed by about
+          20%.  It seems that, from what I've read, under the hood using a list saves a lookup over
+          using a dict (techincally two lookups since it is a list of lists).  This speed up was
+          counter-intuitive since lists are supposed to be O(n) and dicts are supposed to be O(1).
+          However, if the list was larger, dicts may be faster.
     """
 
     def __init__(self):
@@ -229,7 +230,6 @@ class Fire:
                 cached[random_bytes[win_w_min]][random_bytes[(window_w + window_w) - 1]]
 
         # Make local copies to avoid the overhead of lookups.
-        cur_words_palette = self.current_words_palette
         cur_fire_palette = self.current_fire_palette
         black_pixels = self.black_pixels[self.palette_flags['index']]
         start_from = self.start_from
@@ -239,23 +239,20 @@ class Fire:
         logo = self.logo['logo']
 
         if self.display_word:
-            # The palette changed, update the text area.
+            # The user chose to display a word in the fire, process it.
             start_col = self.logo['start_col']
-            logo_cols = self.logo['logo_cols']
+            end_col = start_col + self.logo['logo_cols']
 
             pal_index = 0
 
-            for index in range(self.logo['start_row'] + 87, self.logo['end_row'] + 87):
+            for index in range(self.logo['fire_start'], self.logo['fire_end']):
                 calc_index = (index * window_w)
 
-                for col in range(start_col, start_col + logo_cols):
-                    # Precalculate values used more than once.
-                    calc_col = calc_index + col
-                    calc_pal = logo[pal_index]
+                # Copy an entire row of the logo at a time.
+                back_buf[calc_index + start_col:calc_index + end_col] \
+                    = logo[pal_index:pal_index + end_col - start_col]
 
-                    back_buf[calc_col] = calc_pal
-
-                    pal_index += 1
+                pal_index += end_col - start_col
 
             self.display_word = False
 
@@ -267,20 +264,24 @@ class Fire:
 
         if self.palette_flags['changed']:
             # The palette changed, update the text area.
+            cur_words_palette = self.current_words_palette
+
             start_col = self.logo['start_col']
-            logo_cols = self.logo['logo_cols']
+            end_col = start_col + self.logo['logo_cols']
 
             pal_index = 0
 
             for index in range(self.logo['start_row'], self.logo['end_row']):
                 calc_index = (index * window_w * 3)
 
-                for col in range(start_col, start_col + logo_cols):
-                    # Precalculate values used more than once.
-                    calc_col = calc_index + col * 3
-                    calc_pal = logo[pal_index] * 3
+                for col in range(start_col, end_col):
+                    if logo[pal_index] not in black_pixels:
+                        # Precalculate values used more than once.
+                        calc_col = calc_index + col * 3
+                        calc_pal = logo[pal_index] * 3
 
-                    display_buf[calc_col:calc_col + 3] = cur_words_palette[calc_pal:calc_pal + 3]
+                        display_buf[calc_col:calc_col + 3] \
+                            = cur_words_palette[calc_pal:calc_pal + 3]
 
                     pal_index += 1
 
@@ -327,15 +328,19 @@ class Fire:
         """
 
         if self.palette_flags['grey']:
+            # Set both palettes to grey.
             self.current_words_palette = self.greys[self.palette_flags['index']].copy()
             self.current_fire_palette = self.greys[self.palette_flags['index']].copy()
         elif self.palette_flags['words_grey']:
+            # Set the word palette to grey and the fire palette to color.
             self.current_words_palette = self.greys[self.palette_flags['index']].copy()
             self.current_fire_palette = self.palettes[self.palette_flags['index']].copy()
         elif self.palette_flags['fire_grey']:
+            # Set the fire palette to grey and the word palette to color.
             self.current_words_palette = self.palettes[self.palette_flags['index']].copy()
             self.current_fire_palette = self.greys[self.palette_flags['index']].copy()
         else:
+            # Set both palettes to color.
             self.current_words_palette = self.palettes[self.palette_flags['index']].copy()
             self.current_fire_palette = self.palettes[self.palette_flags['index']].copy()
 
@@ -350,12 +355,19 @@ class Fire:
             'start_row': 0,
             'end_row': 0,
             'start_col': 0,
+            'fire_start': 0,
+            'fire_end': 0
         }
 
+        # Read the logo from the file.
         logo['logo'] = read_logo()
 
+        # There are 20 rows so divide the total bytes by 20 to get the number of columns.  The
+        # divisor could be stored in a variable instead of being hard-coded, but that seemed
+        # unnecessary unless scaling is allowed at some point in the future.
         logo_cols = len(logo['logo']) // 20
 
+        # Set the first column such that the text will be centered.
         logo['start_col'] = (self.window['w'] - logo_cols) // 2
 
         start_row = self.window['h'] - self.window['first_row']
@@ -369,6 +381,8 @@ class Fire:
         logo['logo_cols'] = logo_cols
         logo['start_row'] = start_row
         logo['end_row'] = end_row
+        logo['fire_start'] = start_row + 87
+        logo['fire_end'] = end_row + 87
 
         return logo
 
