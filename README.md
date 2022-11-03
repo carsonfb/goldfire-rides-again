@@ -42,6 +42,8 @@ Notes
 -----
 On Windows, you may have to jump through a small hoop in order to get GoldFire to run.  This [YouTube video](https://www.youtube.com/watch?v=a4NVQC_2S2U) gives detailed instructions and is what I followed.
 
+This has been tested with Python 3.10.0 and 3.8.10 and runs 20% faster on 3.8.10.
+
 Credits
 -------
 Creator of the original GoldFire: Carson F. Ball

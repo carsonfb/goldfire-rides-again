@@ -66,6 +66,9 @@ class Fire:
           using a dict (techincally two lookups since it is a list of lists).  This speed up was
           counter-intuitive since lists are supposed to be O(n) and dicts are supposed to be O(1).
           However, if the list was larger, dicts may be faster.
+
+        * Assigning multiple values in one statement yields a slight speed improvement.  It also
+          reduces the number of statements which makes pylint happy.
     """
 
     def __init__(self):
@@ -142,13 +145,10 @@ class Fire:
         """
 
         # Make local copies to avoid the overhead of lookups.
-        cached = self.cached
-        back_buf = self.back_buf
-        window_w = self.window['w']
+        cached, back_buf, window_w = self.cached, self.back_buf, self.window['w']
 
         # Precalculate values.
-        win_w_min = window_w - 1
-        from_index = self.window['first_row'] * window_w
+        win_w_min, from_index = window_w - 1, self.window['first_row'] * window_w
         to_index = from_index - window_w
 
         # Generate two rows of random data.
@@ -169,8 +169,6 @@ class Fire:
                 # Process all columns except for the first and last column.  Those are
                 # special cases.
 
-                # The pixel directly below the current one is pre-calculated
-                # to save processing.
                 col_index += 1
 
                 back_buf[to_index + col] = \
@@ -191,9 +189,8 @@ class Fire:
                     cached[back_buf[from_window - 1]][back_buf[from_window + win_w_min]]
 
         # The next row is pre-calculated to save processing.
-        from_index = (self.window['h'] - 1) * window_w
+        col_index = from_index = (self.window['h'] - 1) * window_w
         to_index = from_index - window_w
-        col_index = from_index
 
         for col in range(1, win_w_min):
             # The pixel directly below the current one is pre-calculated
@@ -230,11 +227,13 @@ class Fire:
                 cached[random_bytes[win_w_min]][random_bytes[(window_w + window_w) - 1]]
 
         # Make local copies to avoid the overhead of lookups.
-        cur_fire_palette = self.current_fire_palette
-        black_pixels = self.black_pixels[self.palette_flags['index']]
-        start_from = self.start_from
-        end_from = self.end_from
-        first_row = (self.window['h'] - self.window['first_row']) * window_w
+        cur_fire_palette, black_pixels \
+            = self.current_fire_palette, self.black_pixels[self.palette_flags['index']]
+
+        start_from, end_from, first_row \
+            = self.start_from, \
+            self.end_from, \
+            (self.window['h'] - self.window['first_row']) * window_w
 
         logo = self.logo['logo']
 
@@ -256,11 +255,8 @@ class Fire:
 
             self.display_word = False
 
-        # Update the instance's back buffer.
-        self.back_buf = back_buf
-
-        # Clear the display buffer by setting it to black.
-        display_buf = bytearray(self.window['size'] * 3)
+        # Update the instance's back buffer and clear the display buffer by setting it to black.
+        self.back_buf, display_buf = back_buf, bytearray(self.window['size'] * 3)
 
         if self.palette_flags['changed']:
             # The palette changed, update the text area.
@@ -277,8 +273,7 @@ class Fire:
                 for col in range(start_col, end_col):
                     if logo[pal_index] not in black_pixels:
                         # Precalculate values used more than once.
-                        calc_col = calc_index + col * 3
-                        calc_pal = logo[pal_index] * 3
+                        calc_col, calc_pal = calc_index + col * 3, logo[pal_index] * 3
 
                         display_buf[calc_col:calc_col + 3] \
                             = cur_words_palette[calc_pal:calc_pal + 3]
@@ -565,13 +560,12 @@ def make_palette(file):
             blue *= 3
 
             # Prevent overflows.
-            if red > 255:
-                red = 255
-            if green > 255:
-                green = 255
-            if blue > 255:
-                blue = 255
+            red = min(red, 255)
+            green = min(green, 255)
+            blue = min(blue, 255)
 
+            # Calculate the greyscale values.  These should have the same luminosity as the color
+            # vales.
             total = red + green + blue
             grey = total // 3
 
