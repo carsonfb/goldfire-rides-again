@@ -31,18 +31,18 @@ Not all of the commands of the original are supported yet.  Among those are:
 
 Other differences are:
 - Only the program name ("GoldFire") is displayed in the text area.  In the original, it displayed "GoldFire by: ABRAXAS of ΣNDVZTRÆ⅃ MµZ1K".
-- The fire area might be a slightly different height.  I'm not sure what it was on the original and haven't bothered to look it up.  I just went with what looked right in the new version which is what I did in  the original as well.
+- The fire area might be a slightly different height.  I'm not sure what it was on the original and haven't bothered to look it up.  I just went with what looked right in the new version which is what I did in the original as well.
 - The frames / second are displayed when the user quits instead of the credits.
 - In the original version, pressing "a" caused "ABRAXAS" to appear in the fire.  In the new version "GoldFire" appears in the fire.  ABRAXAS was my handle in the local demo scene.
 - The fire algorithm is slightly different
-- This version is slower since it is written in Python and OpenGL rather than x86 Assembler and direct hardware calls.  Although, the user-facing speed (e.g. frames per second) is actually higher.
+- This version is more resource-intensive since it is written in Python and OpenGL rather than x86 Assembler and direct hardware calls.  Although, the user-facing speed (e.g. frames per second) is actually higher.
 - This version is released under a Creative Commons license (see the License section below).  The original was closed source.
 
 Notes
 -----
 On Windows, you may have to jump through a small hoop in order to get GoldFire to run.  This [YouTube video](https://www.youtube.com/watch?v=a4NVQC_2S2U) gives detailed instructions and is what I followed.
 
-This has been tested with Python 3.10.0 and 3.8.10 and runs 20% faster on 3.8.10.
+This has been tested with Python 3.10.0 and 3.8.10 and runs 20% faster on 3.8.10.  It may run on other 3.x versions as well, but 3.8.10 is the recommended version.
 
 Credits
 -------
