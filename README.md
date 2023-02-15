@@ -38,6 +38,10 @@ Other differences are:
 - This version is more resource-intensive since it is written in Python and OpenGL rather than x86 Assembler and direct hardware calls.  Although, the user-facing speed (e.g. frames per second) is actually higher.
 - This version is released under a Creative Commons license (see the License section below).  The original was closed source.
 
+[![Original Screenshot](https://carson.ballweb.org/images/goldfire.png)](https://carson.ballweb.org/images/goldfire.png)
+
+[![New Screenshot](https://carson.ballweb.org/images/goldfire_new.png)](https://carson.ballweb.org/images/goldfire_new.png)
+
 Notes
 -----
 On Windows, you may have to jump through a small hoop in order to get GoldFire to run.  This [YouTube video](https://www.youtube.com/watch?v=a4NVQC_2S2U) gives detailed instructions and is what I followed.

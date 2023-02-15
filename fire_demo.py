@@ -262,6 +262,7 @@ class Fire:
             # The palette changed, update the text area.
             cur_words_palette = self.current_words_palette
 
+            # Calculate the start and end columns.
             start_col = self.logo['start_col']
             end_col = start_col + self.logo['logo_cols']
 
@@ -270,10 +271,11 @@ class Fire:
             for index in range(self.logo['start_row'], self.logo['end_row']):
                 calc_index = (index * window_w * 3)
 
-                for col in range(start_col, end_col):
+                for col in range(start_col * 3, end_col * 3, 3):
+                    # Do not process black pixels as they won't be seen.
                     if logo[pal_index] not in black_pixels:
                         # Precalculate values used more than once.
-                        calc_col, calc_pal = calc_index + col * 3, logo[pal_index] * 3
+                        calc_col, calc_pal = calc_index + col, logo[pal_index] * 3
 
                         display_buf[calc_col:calc_col + 3] \
                             = cur_words_palette[calc_pal:calc_pal + 3]
@@ -284,6 +286,15 @@ class Fire:
             # time or setting it in the back buffer and copying it back over.  This will will need
             # to be timed to see if it is faster or not.
             #self.palette_flags['changed'] = False
+        else:
+            end_col = self.logo['start_col'] + self.logo['logo_cols']
+
+            start_pos = (self.logo['start_row'] * window_w * + self.logo['start_col']) * 3
+            end_pos = (self.logo['end_row'] * window_w + end_col) * 3
+
+            # This doesn't work because the back buffer is already changed and the display buffer
+            # is alrady cleared.
+            display_buf[start_pos:end_pos] = back_buf[start_pos:end_pos]
 
         for index, value in enumerate(back_buf[start_from:end_from + 1]):
             # Update only the fire area.  Only perform half of the loops since the top
@@ -613,7 +624,7 @@ def create_cache():
 
 def generate_data(window_w):
     """
-        This function generates two rows of values at either the min or max value
+        This function generates two rows of values at either the min or halfway value
         of the palette. These are used in the averaging algorithm.
     """
 
