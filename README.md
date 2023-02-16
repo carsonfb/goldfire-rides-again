@@ -54,8 +54,11 @@ Credits
 © 2023 [Carson F. Ball](<mailto://carson@ballweb.org>)
 
 Creator of the original GoldFire: Carson F. Ball
+
 Creator of GoldFire Redux: Carson F. Ball
+
 Designer of the palettes (except pal.bin which is the system palette): Carson F. Ball
+
 Testers of the original GoldFire: Chris Lehman and Dan Lehman
 
 Donations
