@@ -51,10 +51,24 @@ This has been tested with Python 3.10.0 and 3.8.10 and runs 20% faster on 3.8.10
 
 Credits
 -------
+© 2023 [Carson F. Ball](<mailto://carson@ballweb.org>)
+
 Creator of the original GoldFire: Carson F. Ball
 Creator of GoldFire Redux: Carson F. Ball
 Designer of the palettes (except pal.bin which is the system palette): Carson F. Ball
 Testers of the original GoldFire: Chris Lehman and Dan Lehman
+
+Donations
+---------
+If you like this project and want to see more projects from me, please contribute if you are able.
+
+PayPal: [![PayPal donation button](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=CT5XNBHGD5TEN)
+
+Bitcoin wallet: 3QzgUdXzbLY7oy15XeMJ4W37cfBJDeKj6A
+
+Webull affiliate link: https://a.webull.com/8XVE5sOKtu1sPAStxw
+
+Robinhood affiliate link: join.robinhood.com/carsonb453
 
 License
 -------
