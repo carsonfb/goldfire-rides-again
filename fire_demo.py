@@ -282,9 +282,9 @@ class Fire:
                         calc_col, calc_pal = calc_index + col, logo[pal_index] * 3
 
                         # Update the display buffer and the words cache.
-                        display_buf[calc_col:calc_col + 2] \
-                            = self.words_buf[words_index:words_index + 2] \
-                            = cur_words_palette[calc_pal:calc_pal + 2]
+                        display_buf[calc_col:calc_col + 3] \
+                            = self.words_buf[words_index:words_index + 3] \
+                            = cur_words_palette[calc_pal:calc_pal + 3]
 
                     words_index += 3
                     pal_index += 1
@@ -315,9 +315,9 @@ class Fire:
                 quad, idx, idx2 = value * 3, (first_row - index) * 3, (start_from + index) * 3
 
                 # Copy the RGB values from the palette to the display buffer.
-                display_buf[idx:idx + 2] \
-                    = display_buf[idx2:idx2 + 2] \
-                    = cur_fire_palette[quad:quad + 2]
+                display_buf[idx:idx + 3] \
+                    = display_buf[idx2:idx2 + 3] \
+                    = cur_fire_palette[quad:quad + 3]
 
         return display_buf
 
@@ -458,14 +458,15 @@ class Fire:
         elif key in ([b'f', b'F']):
             # If the user presses f, change the fire to greyscale.
             self.palette_flags['fire_grey'] = True
+            self.palette_flags['changed'] = True
 
-            self.current_words_palette = self.greys[self.palette_flags['index']]
+            self.current_fire_palette = self.greys[self.palette_flags['index']]
         elif key in ([b'w', b'W']):
             # If the user presses w, change the fire to greyscale.
             self.palette_flags['words_grey'] = True
             self.palette_flags['changed'] = True
 
-            self.current_fire_palette = self.greys[self.palette_flags['index']]
+            self.current_words_palette = self.greys[self.palette_flags['index']]
         elif key in ([b'a', b'A']):
             # If the user presses a, display "GoldFire" in the fire area and process it.  This is
             # command a becuase, in the original version, it displayed "ABRAXAS".
@@ -593,7 +594,7 @@ def make_palette(file):
                 # If the color is black, add it to the list.
                 black_pixels.add(index)
 
-            # Store the red, green, and blue values as well as the alpha value.
+            # Store the red, green, and blue values.
             palette.extend([red, green, blue])
             greys.extend([grey, grey, grey])
 
