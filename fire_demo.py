@@ -120,6 +120,8 @@ class Fire:
 
         self.cached = create_cache()
 
+        self.words_buf = None
+
         self.display_word = False
 
     def make_frame(self):
@@ -258,43 +260,50 @@ class Fire:
         # Update the instance's back buffer and clear the display buffer by setting it to black.
         self.back_buf, display_buf = back_buf, bytearray(self.window['size'] * 3)
 
+        # Calculate the start and end columns of the logo.
+        start_col = self.logo['start_col'] * 3
+        end_col = start_col + self.logo['logo_cols'] * 3
+
         if self.palette_flags['changed']:
             # The palette changed, update the text area.
             cur_words_palette = self.current_words_palette
 
-            # Calculate the start and end columns.
-            start_col = self.logo['start_col']
-            end_col = start_col + self.logo['logo_cols']
+            self.words_buf = bytearray(len(logo) * 3)
 
-            pal_index = 0
+            pal_index = words_index = 0
 
             for index in range(self.logo['start_row'], self.logo['end_row']):
                 calc_index = (index * window_w * 3)
 
-                for col in range(start_col * 3, end_col * 3, 3):
+                for col in range(start_col, end_col, 3):
                     # Do not process black pixels as they won't be seen.
                     if logo[pal_index] not in black_pixels:
                         # Precalculate values used more than once.
                         calc_col, calc_pal = calc_index + col, logo[pal_index] * 3
 
+                        # Update the display buffer and the words cache.
                         display_buf[calc_col:calc_col + 2] \
+                            = self.words_buf[words_index:words_index + 2] \
                             = cur_words_palette[calc_pal:calc_pal + 2]
 
+                    words_index += 3
                     pal_index += 1
 
-            # To not redraw the text each time would requre clearing only part of the buffer each
-            # time or setting it in the back buffer and copying it back over.  This will will need
-            # to be timed to see if it is faster or not.
-            #self.palette_flags['changed'] = False
+            self.palette_flags['changed'] = False
         else:
-            end_col = self.logo['start_col'] + self.logo['logo_cols']
+            # The palette did not change so use the cached logo.
 
-            start_pos = (self.logo['start_row'] * window_w * + self.logo['start_col']) * 3
-            end_pos = (self.logo['end_row'] * window_w + end_col) * 3
+            buf_start = self.logo['start_row'] * window_w * 3 + start_col
+            words_start = 0
+            logo_cols = self.logo['logo_cols'] * 3
 
-            # This doesn't work because the back buffer is already changed and the display buffer
-            # is alrady cleared.
-            display_buf[start_pos:end_pos] = back_buf[start_pos:end_pos]
+            for index in range(0, 20):
+                # Copy each row of the logo to the display buffer.
+                display_buf[buf_start:buf_start + logo_cols] \
+                    = self.words_buf[words_start:words_start + logo_cols]
+
+                buf_start += self.window['w'] * 3
+                words_start += logo_cols
 
         for index, value in enumerate(back_buf[start_from:end_from + 1]):
             # Update only the fire area.  Only perform half of the loops since the top
