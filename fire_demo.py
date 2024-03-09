@@ -575,9 +575,9 @@ def make_palette(file):
             # The colors were extremely dark and needed to be scaled.  I'm not sure why though as
             # the palette files are the same ones that the original version from the 1990s was
             # using.  This is very close to the original colors after the faked "gamma" correction.
-            red *= 3
-            green *= 3
-            blue *= 3
+            red *= 5
+            green *= 5
+            blue *= 5
 
             # Prevent overflows.
             red = min(red, 255)
