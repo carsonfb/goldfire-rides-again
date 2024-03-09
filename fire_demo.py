@@ -277,8 +277,8 @@ class Fire:
                         # Precalculate values used more than once.
                         calc_col, calc_pal = calc_index + col, logo[pal_index] * 3
 
-                        display_buf[calc_col:calc_col + 3] \
-                            = cur_words_palette[calc_pal:calc_pal + 3]
+                        display_buf[calc_col:calc_col + 2] \
+                            = cur_words_palette[calc_pal:calc_pal + 2]
 
                     pal_index += 1
 
@@ -306,9 +306,9 @@ class Fire:
                 quad, idx, idx2 = value * 3, (first_row - index) * 3, (start_from + index) * 3
 
                 # Copy the RGB values from the palette to the display buffer.
-                display_buf[idx:idx + 3] \
-                    = display_buf[idx2:idx2 + 3] \
-                    = cur_fire_palette[quad:quad + 3]
+                display_buf[idx:idx + 2] \
+                    = display_buf[idx2:idx2 + 2] \
+                    = cur_fire_palette[quad:quad + 2]
 
         return display_buf
 
