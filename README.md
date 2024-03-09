@@ -38,6 +38,7 @@ Other differences are:
 - This version is more resource-intensive since it is written in Python and OpenGL rather than x86 Assembler and direct hardware calls.  Although, the user-facing speed (e.g. frames per second) is actually higher.
 - This version is released under a Creative Commons license (see the License section below).  The original was closed source.
 - The random pixels at the top (and bottom) are no longer displayed.  These are now only on the back-buffer.  This makes the display look a bit cleaner.
+- The logo is read from a pre-processed binary file instead of being created dynamically.
 
 [![Original Screenshot](https://carson.ballweb.org/images/goldfire.png)](https://carson.ballweb.org/images/goldfire.png)
 
