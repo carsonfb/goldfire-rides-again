@@ -3,7 +3,7 @@ GoldFire Redux
 
 Description
 -----------
-GoldFire was a demo created by Carson F. Ball (ABRAXAS of the programming group ΣNDVZTRÆ⅃ MµZ1K) in the mid to late 1990s (source files indicate most versions were created during 1995 and 1996 with a final release in 1998).  This is a Python port of the original x86 Assembler code.
+GoldFire was a demo created by me (ABRAXAS of the programming group ΣNDVZTRÆ⅃ MµZ1K) in the mid to late 1990s (source files indicate most versions were created during 1995 and 1996 with a final release in 1998).  This is a Python port of the original x86 Assembler code.
 
 See the notes section if you have problems running this on Windows.
 
@@ -21,7 +21,7 @@ Features
 - The ability to switch between color (C) and greyscale (G).
 - The ability to change only the words to grey (W).
 - The ability to change only the fire to grey (F).
-- The ability to display "GoldFire" in the fire and have it flame out.
+- The ability to display "GoldFire" in the fire and have it flame out (A).
 - The ability to quit (Q) (ESC).
 
 Differences from the original
@@ -41,8 +41,10 @@ Other differences are:
 - The logo is read from a pre-processed binary file instead of being created dynamically.
 
 [![Original Screenshot](https://carson.ballweb.org/images/goldfire.png)](https://carson.ballweb.org/images/goldfire.png)
+*Original version*
 
 [![New Screenshot](https://carson.ballweb.org/images/goldfire_new.png)](https://carson.ballweb.org/images/goldfire_new.png)
+*New version*
 
 Notes
 -----
