@@ -40,10 +40,10 @@ Other differences are:
 - The random pixels at the top (and bottom) are no longer displayed.  These are now only on the back-buffer.  This makes the display look a bit cleaner.
 - The logo is read from a pre-processed binary file instead of being created dynamically.
 
-[![Original Screenshot](https://carson.ballweb.org/images/goldfire.png)](https://carson.ballweb.org/images/goldfire.png)
+[![Original Screenshot](https://carson.ballweb.org/images/goldfire.png)](https://carson.ballweb.org/images/goldfire.png)<br />
 *Original version*
 
-[![New Screenshot](https://carson.ballweb.org/images/goldfire_new.png)](https://carson.ballweb.org/images/goldfire_new.png)
+[![New Screenshot](https://carson.ballweb.org/images/goldfire_new.png)](https://carson.ballweb.org/images/goldfire_new.png)<br />
 *New version*
 
 Notes
