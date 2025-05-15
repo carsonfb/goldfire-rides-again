@@ -416,9 +416,9 @@ class Fire:
             glut.glutDestroyWindow(self.window['handle'])
 
             # Display the statistics to the user.
-            print(f"Frames: {self.fps['frames']}")
-            print(f"Seconds: {elapsed_time}")
-            print(f"FPS: {fps}")
+            print(f'Frames: {self.fps["frames"]}')
+            print(f'Seconds: {elapsed_time}')
+            print(f'FPS: {fps}')
         elif key in [b'p', b'P']:
             # If the user pressed p, cycle through the palettes.
             self.palette_flags['changed'] = True
@@ -492,7 +492,7 @@ class Fire:
         glut.glutInitDisplayMode(glut.GLUT_RGB)
         glut.glutInitWindowSize(self.window['w'], self.window['h'])
         glut.glutInitWindowPosition(center_x, center_y)
-        self.window['handle'] = glut.glutCreateWindow("GoldFire Rides Again")
+        self.window['handle'] = glut.glutCreateWindow('GoldFire Rides Again'.encode('ascii'))
 
         # Setup the callbacks for OpenGL.
         glut.glutDisplayFunc(self.display_frame)
@@ -528,14 +528,14 @@ def read_palettes():
     black_pixels.append([])
 
     # Find all of the palette files in the palettes folder.
-    files = glob.glob(r"palettes\*.bin")
+    files = glob.glob(r'palettes\*.bin')
 
     for file in files:
         if os.path.getsize(file) != 768:
             # Skip the palette file if it is the wrong size.
             continue
 
-        if "default.bin" in file:
+        if 'default.bin' in file:
             # Set the default palette to the first palette entry.
             palettes[0], greys[0], black_pixels[0] = make_palette(file)
         else:
@@ -554,7 +554,7 @@ def read_logo():
         create_logo.py.
     """
 
-    with open("data/goldfire.bin", "rb") as gf_file:
+    with open('data/goldfire.bin', 'rb') as gf_file:
         goldfire = gf_file.read()
 
     return goldfire
@@ -567,7 +567,7 @@ def make_palette(file):
     greys = []
     black_pixels = set()
 
-    with open(file, "rb") as palette_fh:
+    with open(file, 'rb') as palette_fh:
         # Read in all of the color entries.
         for index in range(0, 256):
             # Read the red, green, and blue values for the color.
@@ -640,6 +640,6 @@ def generate_data(window_w):
 
     return np.random.choice([0, 128], size=window_w + window_w, p=[0.43, 0.57])
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     FIRE = Fire()
     FIRE.main()
